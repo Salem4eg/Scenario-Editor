@@ -1,0 +1,597 @@
+#include "MapView.h"
+#include <QFile>
+#include <sstream>
+#include <QtConcurrent/QtConcurrent>
+#include <QRegularexpression>
+
+MapView::MapView(QWidget *parent)
+	: QGraphicsView(parent)
+{
+
+}
+
+MapView::MapView(QGraphicsScene* scene, QWidget* parent): QGraphicsView(scene, parent)
+{
+	// TEMPORARY
+	mod_filepath = "E:/Steam/steamapps/common/Victoria 2/mod/TGC";
+	QString provinces_path = mod_filepath + "/map/provinces.bmp";
+	province_map.load(provinces_path);
+	province_map.flip(Qt::Vertical);
+
+
+
+	startDebugTimer();
+
+	readProvincesDefinition();
+	assignPixelsToProvince();
+	assignColorToCountries();
+	getCountries_provinces();
+
+	
+
+	endDebugTimer();
+
+	//for (auto& country : countries_provinces.keys())
+	//{
+	//	QString provinces = "";
+
+	//	for (int province : countries_provinces[country])
+	//		provinces += QString::number(province) + " ";
+
+	//	qDebug() << "Country: " + country << " Provinces:" << provinces;
+	//}
+
+	connect(&highlight_timer, &QTimer::timeout, this, &MapView::highlightChosenProvinces);
+}
+
+MapView::~MapView()
+{}
+
+void MapView::wheelEvent(QWheelEvent* event)
+{
+	if (event->angleDelta().y() > 0)
+	{
+		if (scale_step < 8)
+		{
+			scale(1.25, 1.25);
+			scale_step++;
+		}
+	}
+	else
+	{
+		if (scale_step > -4)
+		{
+			scale(0.8, 0.8);
+			scale_step--;
+		}
+	}
+}
+
+void MapView::mousePressEvent(QMouseEvent* event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		leftButtonStartPos = event->pos();
+		mouseDragMode = false;
+	}
+
+	QGraphicsView::mousePressEvent(event);	
+}
+
+void MapView::mouseReleaseEvent(QMouseEvent* event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		QPoint leftButtonEndPos = event->pos();
+
+		int distance = (leftButtonEndPos - leftButtonStartPos).manhattanLength();
+		int dragDistance = QApplication::startDragDistance();
+
+		if (distance >= dragDistance)
+			mouseDragMode = true;
+
+		if (!mouseDragMode)
+		{
+			QPoint pos = mapToScene(event->pos()).toPoint();
+			handleClickAtProvince(pos.x(), pos.y());
+		}
+	}
+
+	QGraphicsView::mouseReleaseEvent(event);
+}
+
+void MapView::mouseMoveEvent(QMouseEvent* event)
+{
+	QGraphicsView::mouseMoveEvent(event);
+}
+
+void MapView::readProvincesDefinition()
+{
+	// TEMPORARY
+	QString provinces_defition = mod_filepath + "/map/definition.csv";
+
+	QFile file(provinces_defition);
+
+	if (!file.open(QFile::ReadOnly))
+		throw std::runtime_error("Cannot open definition csv");
+
+	while (!file.atEnd())
+	{
+		QString line = file.readLine();
+
+		QStringList items = line.split(';');
+
+		// Skip provinces without IDs, such as lakes
+		if (items[0].isEmpty() || items.size() < 4)
+			continue;
+
+		int provinceID = items[0].toInt();
+		int red = items[1].toInt();
+		int green = items[2].toInt();
+		int blue = items[3].toInt();
+
+		auto rgb = qRgb(red, green, blue);
+
+		color_to_province.insert(rgb, provinceID);
+	}
+}
+
+void MapView::assignPixelsToProvince()
+{
+	int thread_count = QThread::idealThreadCount();
+	
+	if (thread_count == 0)
+	{
+		thread_count = 1;
+	}
+
+	int pixels = province_map.width() * province_map.height();
+
+	int pixels_per_thread = pixels / thread_count;
+	
+	QList<QFuture<void>> futures;
+
+	for (int i = 0; i < thread_count; i++)
+	{
+		int start_index = pixels_per_thread * i;
+
+		int count = pixels_per_thread;
+
+		if (i == thread_count - 1)
+			count = pixels - start_index;
+
+		QFuture<void> future = QtConcurrent::run([=]()
+			{
+				assignPartOfPixelsToProvince(start_index, count);
+			});
+		futures.push_back(future);
+	}
+
+	for (auto& future : futures)
+		future.waitForFinished();
+}
+
+void MapView::assignPartOfPixelsToProvince(int start_index, int indexes_to_process)
+{
+	int end_index = start_index + indexes_to_process;
+
+	QHash<int, QList<QPoint>> local_province_pixels;
+
+	for (int pixel_index = start_index; pixel_index < end_index; pixel_index++)
+	{
+		int x = pixel_index % province_map.width();
+		int y = pixel_index / province_map.width();
+
+		QRgb pixel_color = province_map.pixel(x, y);
+
+		int provinceID = color_to_province.value(pixel_color, -1);
+
+		if (provinceID == -1)
+			continue;
+		
+		local_province_pixels[provinceID].push_back({ x,y });
+	}
+
+	QMutexLocker locker(&mutex);
+
+	for (auto [key, value] : local_province_pixels.asKeyValueRange())
+	{
+		province_pixels[key].append(value);
+	}
+}
+
+
+void MapView::highlightChosenProvinces()
+{
+	if (!provinces_highlighted)
+	{
+		emit highlightProvinces(true);
+	}
+	else
+	{
+		emit highlightProvinces(false);
+	}
+	
+	provinces_highlighted = !provinces_highlighted;
+}
+
+void MapView::handleClickAtProvince(int x, int y)
+{
+	if (x < 0 || y < 0 ||
+		x >= province_map.width() ||
+		y >= province_map.height())
+		return;
+
+	QColor pixel = province_map.pixelColor(x, y);
+
+	QRgb rgb = qRgb(pixel.red(), pixel.green(), pixel.blue());
+
+	int province = color_to_province.value(rgb, -1);
+
+	if (province == -1 || !choosable_provinces.contains(province))
+		return;
+
+	if (!chosen_provinces.contains(province))
+		addChosenProvince(province);
+	else
+		removeChosenProvince(province);
+		
+	qDebug() << "Province clicked: " << province;
+
+	provinces_highlighted = false;
+	highlightChosenProvinces();
+
+	if (chosen_provinces.isEmpty())
+		highlight_timer.stop();
+	else
+		highlight_timer.start(1000);
+}
+
+void MapView::addChosenProvince(int provinceID)
+{
+	emit addProvinceToHighlight(province_pixels[provinceID], provinceID);
+
+	chosen_provinces.push_back(provinceID);
+}
+
+void MapView::removeChosenProvince(int provinceID)
+{
+	emit removeProvinceFromHighlight(province_pixels[provinceID], provinceID);
+
+	chosen_provinces.removeOne(provinceID);
+}
+
+void MapView::assignColorToCountries()
+{
+	auto countrie_rows = readCountriesFile();
+	auto countries_filepaths = getCountriesFilePath(countrie_rows);
+	getCountriesColor(countries_filepaths);
+}
+
+QList<QString> MapView::readCountriesFile()
+{
+	QList<QString> countries_rows;
+
+	// TEMPORARY
+	QString countries_filepath = mod_filepath + "/common/countries.txt";
+
+	QFile countries_file(countries_filepath);
+
+	if (!countries_file.open(QFile::ReadOnly | QFile::Text))
+		throw std::runtime_error("Cannot open countries.txt");
+
+	QTextStream fromFile(&countries_file);
+
+	while (!fromFile.atEnd())
+	{
+		QString row = fromFile.readLine();
+
+		if (!row.contains("#"))
+			countries_rows.push_back(row);
+	}
+
+	return countries_rows;
+}
+
+QList<QPair<QString, QString>> MapView::getCountriesFilePath(QList<QString>& countries_rows)
+{
+	QList<QPair<QString, QString>> countries_filepaths;
+
+	for (QString& row : countries_rows)
+	{
+		QStringList parts = row.split('=');
+
+		if (parts.size() != 2)
+			continue;
+
+		QString tag = parts[0].trimmed();
+		QString path = parts[1].trimmed();
+
+		path = path.mid(1, path.length() - 2);
+		
+		countries_filepaths.emplace_back(tag, path);
+	}
+
+	return countries_filepaths;
+}
+
+void MapView::getCountriesColor(QList<QPair<QString, QString>>& countries_filepaths)
+{
+	for (auto& country : countries_filepaths)
+	{
+		// first = tag
+		// second = filepath
+		QString full_filepath = mod_filepath + "/common/" + country.second;
+		QFile countryFile(full_filepath);
+
+		if (!countryFile.open(QFile::ReadOnly | QFile::Text))
+			throw std::runtime_error("Couldn't open country's filepath");
+
+		QTextStream fromFile(&countryFile);
+
+		while (!fromFile.atEnd())
+		{
+			QString line = fromFile.readLine();
+
+			if (line.contains("color"))
+			{
+				QString numbers = line.mid(line.indexOf('{') + 1);
+				numbers = numbers.left(numbers.indexOf('}'));
+
+				auto items = numbers.split(' ', Qt::SkipEmptyParts);
+
+				int red = items[0].toInt();
+				int green = items[1].toInt();
+				int blue = items[2].toInt();
+
+				countries_color.insert(country.first, qRgb(red, green, blue));
+
+				break;
+			}
+		}
+	}
+	countries_color.insert("NO_OWNER", qRgb(50,50,50));
+}
+
+void MapView::getCountries_provinces()
+{
+	QString provinces_directory_path("E:/Steam/steamapps/common/Victoria 2/mod/TGC/history/provinces");
+
+	QDirIterator it(provinces_directory_path, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
+
+	while (it.hasNext())
+	{
+		getOwnerFromProvince(it.next());
+	}
+}
+
+void MapView::getOwnerFromProvince(QString filepath)
+{
+	QFile province(filepath);
+
+	if (!province.open(QFile::ReadOnly | QFile::Text))
+		throw std::runtime_error("Couldn't open province file: " + filepath.toStdString());
+
+	int provinceID = getProvinceIDFromFilepath(filepath);
+	QString province_owner = "NO_OWNER";
+
+	QTextStream from_file(&province);
+
+	while (!from_file.atEnd())
+	{
+		QString line = from_file.readLine();
+
+		if (line.contains("owner"))
+		{
+			auto words = line.split("=");
+
+			province_owner = words.last().trimmed();
+
+			if (province_owner.size() > 3)
+				qDebug() << "Province: " << provinceID << " owner: " << province_owner;
+			break;
+		}	
+	}
+
+	// choosable_provinces для уникання морських провінцій
+	choosable_provinces.push_back(provinceID);
+	countries_provinces[province_owner].push_back(provinceID);
+}
+
+int MapView::getProvinceIDFromFilepath(QString filepath)
+{
+	auto words = filepath.split("/");
+	QString document = words.last();
+
+	auto items = document.split("-");
+
+	int provinceID = items.first().toInt();
+
+	return provinceID;
+}
+
+QImage MapView::makeOutlineForProvinces()
+{
+	QImage outline_map = QImage(province_map.size(), QImage::Format_ARGB32);
+	outline_map.fill(Qt::transparent);
+
+	int thread_count = QThread::idealThreadCount();
+
+	if (thread_count == 0)
+	{
+		thread_count = 1;
+	}
+
+	int pixels = outline_map.width() * outline_map.height();
+
+	int pixels_per_thread = pixels / thread_count;
+
+	QList<QFuture<void>> futures;
+
+	for (int i = 0; i < thread_count; i++)
+	{
+		int start_index = pixels_per_thread * i;
+
+		int count = pixels_per_thread;
+
+		if (i == thread_count - 1)
+			count = pixels - start_index;
+
+		QFuture<void> future = QtConcurrent::run([&, start_index, count]()
+			{
+				makeOutlineForPartOfMap(outline_map, start_index, count);
+			});
+		futures.push_back(future);
+	}
+
+	for (auto& future : futures)
+		future.waitForFinished();
+
+	return outline_map;
+}
+
+void MapView::makeOutlineForPartOfMap(QImage& outline_map, int start_index, int indexes_to_process)
+{
+	int end_index = start_index + indexes_to_process;
+
+	QList<QPoint> outline_pixels;
+
+	for (int pixel_index = start_index; pixel_index < end_index; pixel_index++)
+	{
+		int x = pixel_index % province_map.width();
+		int y = pixel_index / province_map.width();
+
+		if (hasAnotherProvinceNear(x,y))
+			outline_pixels.push_back({ x, y });
+	}
+
+	QMutexLocker lock(&mutex);
+
+	for (auto& coords : outline_pixels)
+	{
+		outline_map.setPixel(coords, qRgb(0,0,0));
+	}
+}
+
+bool MapView::hasAnotherProvinceNear(int x, int y)
+{
+	QRgb pixel = province_map.pixel(x, y);
+
+	if (x - 1 >= 0)
+	{
+		QRgb left_pixel = province_map.pixel(x - 1, y);
+		if (left_pixel != pixel)
+		{
+			return true;
+		}
+	}
+	if (x + 1 < province_map.width())
+	{
+		QRgb right_pixel = province_map.pixel(x + 1, y);
+		if (right_pixel != pixel)
+		{
+			return true;
+		}
+	}
+	if (y - 1 >= 0)
+	{
+		QRgb upper_pixel = province_map.pixel(x, y - 1);
+		if (upper_pixel != pixel)
+		{
+			return true;
+		}
+	}
+	if (y + 1 < province_map.height())
+	{
+		QRgb bottom_pixel = province_map.pixel(x, y + 1);
+		if (bottom_pixel != pixel)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+QImage MapView::makeCountriesViewMap()
+{
+	QImage countries_view_map = QImage(province_map.size(), QImage::Format_ARGB32);
+	countries_view_map.fill({30,30,30});
+
+	for (auto [tag, provinces] : countries_provinces.asKeyValueRange())
+	{
+		auto it = countries_color.find(tag);
+
+		if (it == countries_color.end())
+			continue;
+
+		auto color = it.value();
+
+		for (int province : provinces)
+		{
+			paintProvince(countries_view_map, province, color);
+		}
+	}
+
+	return countries_view_map;
+}
+
+void MapView::paintProvince(QImage& countries_view_map, int province, QRgb color)
+{
+	for (auto pixel : province_pixels[province])
+		countries_view_map.setPixel(pixel, color);
+}
+
+//void MapView::paintOutlineOverCountriesViewMap(QImage& countries_view_map, QImage& outline_map)
+//{
+//	QPainter painter(&countries_view_map);
+//
+//	painter.drawImage(0, 0, outline_map);
+//	painter.end();
+//}
+
+void MapView::startDebugTimer()
+{
+	timer.start();
+}
+
+void MapView::endDebugTimer()
+{
+	auto time_elapsed = timer.elapsed();
+	int time_elapsed_sec = time_elapsed / 1000;
+	int ms_remaining = time_elapsed % 1000;
+
+	qDebug() << "Time: " << time_elapsed_sec << "s " << ms_remaining << "ms";
+}
+
+QImage MapView::getCountriesViewMap()
+{
+	QImage outline_map = makeOutlineForProvinces();
+	QImage countries_view_map = makeCountriesViewMap();
+	//paintOutlineOverCountriesViewMap(countries_view_map, outline_map);
+
+	//QImage countries_view_map(outline_map.size(), QImage::Format_ARGB32);
+	//countries_view_map.fill(Qt::white);
+
+	//QPainter painter(&countries_view_map);
+
+	//painter.drawImage(0, 0, outline_map);
+	//painter.end();
+
+	return countries_view_map;
+}
+
+QRgb MapView::GetCountryColor(QString tag)
+{
+	return countries_color[tag];
+}
+
+QList<QList<QPoint>> MapView::getProvincesPixels(QList<int> provinces)
+{
+	QList<QList<QPoint>> result;
+
+	for (int province : provinces)
+		result.push_back(province_pixels[province]);
+
+	return result;
+}
+

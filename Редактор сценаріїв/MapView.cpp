@@ -1,51 +1,42 @@
 #include "MapView.h"
-#include <QFile>
 #include <sstream>
 #include <QtConcurrent/QtConcurrent>
 #include <QRegularexpression>
 
-MapView::MapView(QWidget *parent)
-	: QGraphicsView(parent)
+MapView::MapView(QString directory, QGraphicsScene* scene, QWidget* parent): QGraphicsView(scene, parent)
 {
+	directory_path = directory;
+	QDir dir(directory);
 
-}
+	provinces_path = dir.filePath("map/provinces.bmp");
+	provinces_definition = dir.filePath("map/definition.csv");
+	countries_filepath = dir.filePath("common/countries.txt");
+	provinces_directory_path = dir.filePath("history/provinces");
 
-MapView::MapView(QGraphicsScene* scene, QWidget* parent): QGraphicsView(scene, parent)
-{
-	// TEMPORARY
-	mod_filepath = "E:/Steam/steamapps/common/Victoria 2/mod/TGC";
-	QString provinces_path = mod_filepath + "/map/provinces.bmp";
 	province_map.load(provinces_path);
 	province_map.flip(Qt::Vertical);
 
-
-
 	startDebugTimer();
+
 
 	readProvincesDefinition();
 	assignPixelsToProvince();
 	assignColorToCountries();
 	getCountries_provinces();
 
-	
 
 	endDebugTimer();
-
-	//for (auto& country : countries_provinces.keys())
-	//{
-	//	QString provinces = "";
-
-	//	for (int province : countries_provinces[country])
-	//		provinces += QString::number(province) + " ";
-
-	//	qDebug() << "Country: " + country << " Provinces:" << provinces;
-	//}
 
 	connect(&highlight_timer, &QTimer::timeout, this, &MapView::highlightChosenProvinces);
 }
 
 MapView::~MapView()
 {}
+
+//void MapView::prepare()
+//{
+//	
+//}
 
 void MapView::wheelEvent(QWheelEvent* event)
 {
@@ -105,14 +96,24 @@ void MapView::mouseMoveEvent(QMouseEvent* event)
 	QGraphicsView::mouseMoveEvent(event);
 }
 
+void MapView::setThreadsCounter(int count)
+{
+	threads_working = count;
+}
+
+void MapView::decreaseAndCheckThreadsCounter()
+{
+	threads_working--;
+
+	if (threads_working.load() == 0)
+		emit isReadyToShow();
+}
+
 void MapView::readProvincesDefinition()
 {
-	// TEMPORARY
-	QString provinces_defition = mod_filepath + "/map/definition.csv";
+	FileReader file(provinces_definition);
 
-	QFile file(provinces_defition);
-
-	if (!file.open(QFile::ReadOnly))
+	if (!file.isOpen())
 		throw std::runtime_error("Cannot open definition csv");
 
 	while (!file.atEnd())
@@ -125,15 +126,32 @@ void MapView::readProvincesDefinition()
 		if (items[0].isEmpty() || items.size() < 4)
 			continue;
 
-		int provinceID = items[0].toInt();
-		int red = items[1].toInt();
-		int green = items[2].toInt();
-		int blue = items[3].toInt();
+		int provinceID = getOnlyDigits(items[0]);
+		int red = getOnlyDigits(items[1]);
+		int green = getOnlyDigits(items[2]);
+		int blue = getOnlyDigits(items[3]);
 
 		auto rgb = qRgb(red, green, blue);
 
+		if (provinceID == 1825)
+			qDebug() << "1825: " << rgb << " colors: " << red << " "<< green << " "<< blue;
+
 		color_to_province.insert(rgb, provinceID);
 	}
+}
+
+int MapView::getOnlyDigits(const QString& text)
+{
+	QString numbers;
+	numbers.reserve(text.size());
+
+	for (QChar ch : text)
+	{
+		if (ch.isDigit())
+			numbers += ch;
+	}
+
+	return numbers.toInt();
 }
 
 void MapView::assignPixelsToProvince()
@@ -145,10 +163,12 @@ void MapView::assignPixelsToProvince()
 		thread_count = 1;
 	}
 
+	//setThreadsCounter(thread_count);
+
 	int pixels = province_map.width() * province_map.height();
 
 	int pixels_per_thread = pixels / thread_count;
-	
+
 	QList<QFuture<void>> futures;
 
 	for (int i = 0; i < thread_count; i++)
@@ -163,7 +183,10 @@ void MapView::assignPixelsToProvince()
 		QFuture<void> future = QtConcurrent::run([=]()
 			{
 				assignPartOfPixelsToProvince(start_index, count);
+
+				//decreaseAndCheckThreadsCounter();
 			});
+
 		futures.push_back(future);
 	}
 
@@ -226,16 +249,24 @@ void MapView::handleClickAtProvince(int x, int y)
 
 	QRgb rgb = qRgb(pixel.red(), pixel.green(), pixel.blue());
 
+	qDebug() << "rgb: " << rgb << " pixel: " << pixel.red() << " " << pixel.green() << " " << pixel.blue();
+
 	int province = color_to_province.value(rgb, -1);
 
 	if (province == -1 || !choosable_provinces.contains(province))
 		return;
 
+	if (enable_province_choosing == false)
+	{
+		emit getChosenProvinceInfo(province);
+		return;
+	}
+
 	if (!chosen_provinces.contains(province))
 		addChosenProvince(province);
 	else
 		removeChosenProvince(province);
-		
+
 	qDebug() << "Province clicked: " << province;
 
 	provinces_highlighted = false;
@@ -272,21 +303,23 @@ QList<QString> MapView::readCountriesFile()
 {
 	QList<QString> countries_rows;
 
-	// TEMPORARY
-	QString countries_filepath = mod_filepath + "/common/countries.txt";
+	FileReader countries_file(countries_filepath);
 
-	QFile countries_file(countries_filepath);
-
-	if (!countries_file.open(QFile::ReadOnly | QFile::Text))
+	if (!countries_file.isOpen())
 		throw std::runtime_error("Cannot open countries.txt");
 
-	QTextStream fromFile(&countries_file);
-
-	while (!fromFile.atEnd())
+	while (!countries_file.atEnd())
 	{
-		QString row = fromFile.readLine();
+		QString row = countries_file.readLine();
 
-		if (!row.contains("#"))
+		int commentIndex = row.indexOf("#");
+
+		if (commentIndex != -1)
+			row = row.left(commentIndex);
+
+		row = row.trimmed();
+
+		if (!row.isEmpty())
 			countries_rows.push_back(row);
 	}
 
@@ -308,8 +341,9 @@ QList<QPair<QString, QString>> MapView::getCountriesFilePath(QList<QString>& cou
 		QString path = parts[1].trimmed();
 
 		path = path.mid(1, path.length() - 2);
-		
-		countries_filepaths.emplace_back(tag, path);
+
+		if (path.endsWith(".txt", Qt::CaseInsensitive))
+			countries_filepaths.emplace_back(tag, path);
 	}
 
 	return countries_filepaths;
@@ -317,21 +351,21 @@ QList<QPair<QString, QString>> MapView::getCountriesFilePath(QList<QString>& cou
 
 void MapView::getCountriesColor(QList<QPair<QString, QString>>& countries_filepaths)
 {
+	QDir dir(directory_path);
+
 	for (auto& country : countries_filepaths)
 	{
 		// first = tag
 		// second = filepath
-		QString full_filepath = mod_filepath + "/common/" + country.second;
-		QFile countryFile(full_filepath);
+		QString full_filepath = dir.filePath("common/" + country.second);
+		FileReader countryFile(full_filepath);
 
-		if (!countryFile.open(QFile::ReadOnly | QFile::Text))
+		if (!countryFile.isOpen())
 			throw std::runtime_error("Couldn't open country's filepath");
 
-		QTextStream fromFile(&countryFile);
-
-		while (!fromFile.atEnd())
+		while (!countryFile.atEnd())
 		{
-			QString line = fromFile.readLine();
+			QString line = countryFile.readLine();
 
 			if (line.contains("color"))
 			{
@@ -355,8 +389,6 @@ void MapView::getCountriesColor(QList<QPair<QString, QString>>& countries_filepa
 
 void MapView::getCountries_provinces()
 {
-	QString provinces_directory_path("E:/Steam/steamapps/common/Victoria 2/mod/TGC/history/provinces");
-
 	QDirIterator it(provinces_directory_path, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 
 	while (it.hasNext())
@@ -365,40 +397,23 @@ void MapView::getCountries_provinces()
 	}
 }
 
-void MapView::getOwnerFromProvince(QString filepath)
+void MapView::getOwnerFromProvince(const QString& filepath)
 {
-	QFile province(filepath);
+	FileReader reader(filepath);
 
-	if (!province.open(QFile::ReadOnly | QFile::Text))
+	if (!reader.isOpen())
 		throw std::runtime_error("Couldn't open province file: " + filepath.toStdString());
 
 	int provinceID = getProvinceIDFromFilepath(filepath);
-	QString province_owner = "NO_OWNER";
 
-	QTextStream from_file(&province);
-
-	while (!from_file.atEnd())
-	{
-		QString line = from_file.readLine();
-
-		if (line.contains("owner"))
-		{
-			auto words = line.split("=");
-
-			province_owner = words.last().trimmed();
-
-			if (province_owner.size() > 3)
-				qDebug() << "Province: " << provinceID << " owner: " << province_owner;
-			break;
-		}	
-	}
+	QString province_owner = Province_manager::getOwnerFromProvince(filepath);
 
 	// choosable_provinces для уникання морських провінцій
 	choosable_provinces.push_back(provinceID);
 	countries_provinces[province_owner].push_back(provinceID);
 }
 
-int MapView::getProvinceIDFromFilepath(QString filepath)
+int MapView::getProvinceIDFromFilepath(const QString& filepath)
 {
 	auto words = filepath.split("/");
 	QString document = words.last();
@@ -410,7 +425,7 @@ int MapView::getProvinceIDFromFilepath(QString filepath)
 	return provinceID;
 }
 
-QImage MapView::makeOutlineForProvinces()
+QImage MapView::GetBordersViewMap()
 {
 	QImage outline_map = QImage(province_map.size(), QImage::Format_ARGB32);
 	outline_map.fill(Qt::transparent);
@@ -512,7 +527,7 @@ bool MapView::hasAnotherProvinceNear(int x, int y)
 	return false;
 }
 
-QImage MapView::makeCountriesViewMap()
+QImage MapView::GetCountriesViewMap()
 {
 	QImage countries_view_map = QImage(province_map.size(), QImage::Format_ARGB32);
 	countries_view_map.fill({30,30,30});
@@ -533,6 +548,34 @@ QImage MapView::makeCountriesViewMap()
 	}
 
 	return countries_view_map;
+}
+
+void MapView::setProvinceChoosingMode(bool choose)
+{
+	enable_province_choosing = choose;
+}
+
+void MapView::showHighlighting(bool show)
+{
+	if (show)
+	{
+		if (!chosen_provinces.isEmpty())
+		{
+			highlight_timer.start(1000);
+		}
+	}
+	else
+		highlight_timer.stop();
+}
+
+void MapView::clearChosenProvinces()
+{
+	for (int province : chosen_provinces)
+	{
+		emit removeProvinceFromHighlight(province_pixels[province], province);
+	}
+
+	chosen_provinces.clear();
 }
 
 void MapView::paintProvince(QImage& countries_view_map, int province, QRgb color)
@@ -561,23 +604,6 @@ void MapView::endDebugTimer()
 	int ms_remaining = time_elapsed % 1000;
 
 	qDebug() << "Time: " << time_elapsed_sec << "s " << ms_remaining << "ms";
-}
-
-QImage MapView::getCountriesViewMap()
-{
-	QImage outline_map = makeOutlineForProvinces();
-	QImage countries_view_map = makeCountriesViewMap();
-	//paintOutlineOverCountriesViewMap(countries_view_map, outline_map);
-
-	//QImage countries_view_map(outline_map.size(), QImage::Format_ARGB32);
-	//countries_view_map.fill(Qt::white);
-
-	//QPainter painter(&countries_view_map);
-
-	//painter.drawImage(0, 0, outline_map);
-	//painter.end();
-
-	return countries_view_map;
 }
 
 QRgb MapView::GetCountryColor(QString tag)

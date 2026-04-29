@@ -63,6 +63,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -92,10 +97,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="SidePanel.cpp" />
     <QtRcc Include="Scenario_editor.qrc" />
     <QtMoc Include="Scenario_editor.h" />
+    <ClCompile Include="FileReader.cpp" />
     <ClCompile Include="MapView.cpp" />
+    <ClCompile Include="ProvinceInfoToolTip.cpp" />
     <ClCompile Include="Province_manager.cpp" />
+    <ClCompile Include="ScenarioEditorWidget.cpp" />
+    <ClCompile Include="ScenarioSetupWidget.cpp" />
     <ClCompile Include="Scenario_editor.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -103,6 +113,12 @@
     <QtMoc Include="MapView.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="ScenarioEditorWidget.h" />
+    <QtMoc Include="ScenarioSetupWidget.h" />
+    <ClInclude Include="FileReader.h" />
+    <QtMoc Include="SidePanel.h" />
+    <ClInclude Include="Structures.h" />
+    <QtMoc Include="ProvinceInfoToolTip.h" />
     <ClInclude Include="Province_manager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -2,6 +2,9 @@
 #include <QFile>
 #include <QList>
 #include <QHash>
+#include "Structures.h"
+#include "FileReader.h"
+
 
 class Province_manager
 {
@@ -14,6 +17,8 @@ public slots:
 	// Removes core from provinces if they have it
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag);
 
+	ProvinceInfo getProvinceInfo(int province);
+	static QString getOwnerFromProvince(const QString& filepath);
 
 private:
 	QHash<int, QString> provinces_filepath;
@@ -25,7 +30,9 @@ private:
 	void addCoreToProvince(int province, QString country_tag);
 	void removeCoreFromProvince(int province, QString country_tag);
 
-	void writeToFile(QFile& province_file, QStringList& text);
-	bool getProvinceFile(QFile& province_file, int province);
+	void writeToFile(int province, QStringList& text);
+	bool openProvinceFile(FileReader& province_file, int province);
+
+	QString getProvinceName(int province);
 };
 

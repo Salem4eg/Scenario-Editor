@@ -6,24 +6,38 @@
 #include <ostream>
 #include <QMutex>
 #include <QTimer>
+#include <atomic>
+#include "FileReader.h"
+#include "Province_manager.h"
 
 class MapView : public QGraphicsView
 {
 	Q_OBJECT
 
 public:
-	MapView(QWidget *parent = nullptr);
-	MapView(QGraphicsScene * scene, QWidget *parent = nullptr);
+	MapView(QString directory_path, QGraphicsScene * scene, QWidget *parent = nullptr);
 	~MapView();
 
-	QImage getCountriesViewMap();
+public slots:
+	//void prepare();
+
 	QRgb GetCountryColor(QString tag);
 	QList<QList<QPoint>> getProvincesPixels(QList<int> provinces);
 
+	QImage GetBordersViewMap();
+	QImage GetCountriesViewMap();
+
+	void setProvinceChoosingMode(bool choose);
+	void showHighlighting(bool show);
+	void clearChosenProvinces();
+
 signals:
+	void isReadyToShow();
+
+	void getChosenProvinceInfo(int provinceID);
 	void highlightProvinces(bool highlight);
-	void addProvinceToHighlight(QList<QPoint> province_pixels, int provinceID);
-	void removeProvinceFromHighlight(QList<QPoint> province_pixels, int provinceID);
+	void addProvinceToHighlight(const QList<QPoint>& province_pixels, int provinceID);
+	void removeProvinceFromHighlight(const QList<QPoint>& province_pixels, int provinceID);
 
 protected:
 	void wheelEvent(QWheelEvent* event) override;
@@ -47,12 +61,23 @@ private:
 
 	QHash<QString, QRgb> countries_color;
 
-	QString mod_filepath;
+	QString directory_path;
+	QString provinces_definition;
+	QString countries_filepath;
+	QString provinces_directory_path;
+	QString provinces_path;
 
 	QHash<QString, QList<int>> countries_provinces;
 	QList<int> choosable_provinces;
 
+	bool enable_province_choosing;
+
+	std::atomic<int> threads_working = 0;
+
+	void setThreadsCounter(int count);
+	void decreaseAndCheckThreadsCounter();
 	void readProvincesDefinition();
+	int getOnlyDigits(const QString& text);
 	void assignPixelsToProvince();
 	void assignPartOfPixelsToProvince(int start_index, int indexes_to_process);
 
@@ -69,14 +94,12 @@ private:
 
 	
 	void getCountries_provinces();
-	void getOwnerFromProvince(QString filepath);
-	int getProvinceIDFromFilepath(QString filepath);
+	void getOwnerFromProvince(const QString& filepath);
+	int getProvinceIDFromFilepath(const QString& filepath);
 
-	QImage makeOutlineForProvinces();
 	void makeOutlineForPartOfMap(QImage& outline_map, int start_index, int indexes_to_process);
 	bool hasAnotherProvinceNear(int x, int y);
 
-	QImage makeCountriesViewMap();
 	void paintProvince(QImage& countries_view_map,int province, QRgb color);
 
 	//void paintOutlineOverCountriesViewMap(QImage& countries_view_map, QImage& outline_map);

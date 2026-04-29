@@ -24,6 +24,90 @@ void Province_manager::removeCoreFromProvinces(QList<int> provinces, QString cou
 		removeCoreFromProvince(province, country_tag);
 }
 
+ProvinceInfo Province_manager::getProvinceInfo(int province)
+{
+	FileReader province_file;
+
+	if (!openProvinceFile(province_file, province))
+		return {};
+
+	ProvinceInfo info;
+
+	int depth = 0;
+	while (!province_file.atEnd())
+	{
+		QString line = province_file.readLine();
+
+		int comment_pos = line.indexOf("#");
+
+		if (comment_pos != -1)
+			line = line.left(comment_pos);
+
+		if (line.contains("{"))
+			depth++;
+
+		if (line.contains("owner =") && depth == 0)
+		{
+			info.owner = line.remove("owner =").trimmed();
+
+			if (info.owner.size() != 3)
+				qDebug() << "Province: " << province << " info.owner = " << info.owner;
+		}
+
+		if (line.contains("add_core =") && depth == 0)
+		{
+			info.cores.push_back(line.remove("add_core =").trimmed());
+
+			if (info.cores.last().size() != 3)
+				qDebug() << "Province: " << province << " info.cores.last = " << info.cores.last();
+		}
+
+		if (line.contains("}"))
+			depth--;
+	}
+
+	info.name = getProvinceName(province);
+
+	return info;
+}
+
+QString Province_manager::getOwnerFromProvince(const QString& filepath)
+{
+	QString owner = "NO_OWNER";
+
+	FileReader province_file(filepath);
+
+	if (!province_file.isOpen())
+		throw std::runtime_error("Couldn't open the file from path: " + filepath.toStdString());
+
+	int depth = 0;
+	while (!province_file.atEnd())
+	{
+		QString line = province_file.readLine();
+
+		int comment_pos = line.indexOf("#");
+
+		if (comment_pos != -1)
+			line = line.left(comment_pos);
+
+		if (line.contains("{"))
+			depth++;
+
+		if (line.contains("owner =") && depth == 0)
+		{
+			owner = line.remove("owner =").trimmed();
+
+			if (owner.size() != 3)
+				qDebug() << "Strange owner: " << owner << " filepath: " << filepath;
+		}
+
+		if (line.contains("}"))
+			depth--;
+	}
+
+	return owner;
+}
+
 void Province_manager::getProvincesFilepath(QString provinces_directory)
 {
 	QDirIterator it(provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
@@ -49,52 +133,82 @@ int Province_manager::getProvinceFromFilepath(QString filepath)
 
 void Province_manager::changeProvinceOwner(int province, QString country_tag)
 {
-	QFile province_file;
+	FileReader province_file;
 
-	if (!getProvinceFile(province_file, province))
+	if (!openProvinceFile(province_file, province))
 		return;
-
-	QTextStream read(&province_file);
 
 	QStringList text;
 
 	text.append("owner = " + country_tag);
 	text.append("controller = " + country_tag);
+	int depth = 0;
 
-	while (!read.atEnd())
+	while (!province_file.atEnd())
 	{
-		QString line = read.readLine();
-		if (!line.contains("owner") && !line.contains("controller"))
+		QString line = province_file.readLine();
+
+		if (line.contains("#"))
+		{
+			int comment_pos = line.indexOf("#");
+			line = line.left(comment_pos);
+		}
+
+		if (line.contains("{"))
+			depth++;
+
+		if ((!line.contains("owner") && !line.contains("controller")) || depth != 0)
 			text.append(line);
+
+		if (line.contains("}"))
+			depth--;
+
 	}
 
-	writeToFile(province_file, text);
+	writeToFile(province, text);
 }
 
 void Province_manager::addCoreToProvince(int province, QString country_tag)
 {
-	QFile province_file;
+	FileReader province_file;
 
-	if (!getProvinceFile(province_file, province))
+	if (!openProvinceFile(province_file, province))
 		return;
 
-	QTextStream read(&province_file);
 	QStringList text;
 
 	bool has_core = false;
 	int insert_line_index = 0;
+	int depth = 0;
 
 	QString line_to_add("add_core = " + country_tag);
 
-	while (!read.atEnd())
+	while (!province_file.atEnd())
 	{
-		QString line = read.readLine();
+		QString line = province_file.readLine();
 
-		if (line.contains(line_to_add))
+		if (line.contains("#"))
+		{
+			int comment_pos = line.indexOf("#");
+			line = line.left(comment_pos);
+		}
+
+		if (line.contains("{"))
+			depth++;
+
+		
+		if (line.contains(line_to_add) && depth == 0)
+		{
 			has_core = true;
-
-		else if (line.contains("owner") || line.contains("controller"))
+			break;
+		}
+		
+		if ((line.contains("owner") || line.contains("controller")) && depth == 0)
 			insert_line_index = text.size() + 1;
+
+
+		if (line.contains("}"))
+			depth--;
 
 		text.append(line);
 	}
@@ -104,39 +218,65 @@ void Province_manager::addCoreToProvince(int province, QString country_tag)
 
 	text.insert(insert_line_index, line_to_add);
 
-	writeToFile(province_file, text);
+	writeToFile(province, text);
 }
 
 void Province_manager::removeCoreFromProvince(int province, QString country_tag)
 {
-	QFile province_file;
+	FileReader province_file;
 
-	if (!getProvinceFile(province_file, province))
+	if (!openProvinceFile(province_file, province))
 		return;
 
-	QTextStream read(&province_file);
 	QStringList text;
 
 	bool removed = false;
+	int depth = 0;
 
-	while (!read.atEnd())
+	while (!province_file.atEnd())
 	{
-		QString line = read.readLine();
-		if (!line.contains("add_core = " + country_tag))
-			text.append(line);
+		QString line = province_file.readLine();
+		
+		QString code_part;
+		QString commented_part;
+
+		int comment_pos = line.indexOf("#");
+
+		if (comment_pos != -1)
+		{
+			code_part = line.left(comment_pos);
+			commented_part = line.mid(comment_pos);
+		}
+		else
+			code_part = std::move(line);
+
+		if (code_part.contains("{"))
+		{
+			depth++;
+		}
+
+		if (!code_part.contains("add_core = " + country_tag) || depth != 0)
+			text.append(code_part + commented_part);
 		else
 			removed = true;
+
+		if (code_part.contains("}"))
+		{
+			depth--;
+		}
 	}
 
 	if (!removed)
 		return;
 
-	writeToFile(province_file, text);
+	writeToFile(province, text);
 }
 
-void Province_manager::writeToFile(QFile& province_file, QStringList& text)
+void Province_manager::writeToFile(int province, QStringList& text)
 {
-	province_file.close();
+	QString filepath = provinces_filepath.value(province);
+	
+	QFile province_file(filepath);
 	province_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate);
 
 	QTextStream write(&province_file);
@@ -145,7 +285,7 @@ void Province_manager::writeToFile(QFile& province_file, QStringList& text)
 		write << line << "\n";
 }
 
-bool Province_manager::getProvinceFile(QFile& province_file, int province)
+bool Province_manager::openProvinceFile(FileReader& province_file, int province)
 {
 	QString filepath = provinces_filepath.value(province, "");
 
@@ -155,14 +295,21 @@ bool Province_manager::getProvinceFile(QFile& province_file, int province)
 		return false;
 	}
 
-	province_file.setFileName(filepath);
-
-	if (!province_file.open(QFile::ReadOnly | QFile::Text))
+	if (!province_file.open(filepath))
 	{
 		qDebug() << "Couldn't open the file. Province: " << province << " Filepath: " << filepath;
 		return false;
 	}
 
 	return true;
+}
+
+QString Province_manager::getProvinceName(int province)
+{
+	QString filepath = provinces_filepath[province];
+
+	QFileInfo info(filepath);
+
+	return info.baseName().split("-").last().trimmed();
 }
 

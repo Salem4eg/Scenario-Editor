@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QPushButton>
 #include <QLabel>
+#include <QGraphicsEffect>
 
 class ScenarioSetupWidget : public QWidget
 {
@@ -18,9 +19,10 @@ signals:
 
 private:
 	QPushButton* browse_button;
-	QLabel* path_label;
+	QLabel* directory_path_label;
 	bool hasValidPath = false;
 
 	bool isValidPath(const QString& directory_path);
+	QGraphicsDropShadowEffect* getShadow();
 };
 

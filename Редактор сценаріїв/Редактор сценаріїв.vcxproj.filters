@@ -23,9 +23,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <QtRcc Include="Scenario_editor.qrc">
-      <Filter>Resource Files</Filter>
-    </QtRcc>
     <QtMoc Include="Scenario_editor.h">
       <Filter>Header Files</Filter>
     </QtMoc>

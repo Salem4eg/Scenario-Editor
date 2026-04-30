@@ -98,7 +98,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="SidePanel.cpp" />
-    <QtRcc Include="Scenario_editor.qrc" />
     <QtMoc Include="Scenario_editor.h" />
     <ClCompile Include="FileReader.cpp" />
     <ClCompile Include="MapView.cpp" />

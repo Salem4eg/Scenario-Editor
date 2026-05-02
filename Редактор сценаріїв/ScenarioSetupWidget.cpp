@@ -1,6 +1,5 @@
 #include "ScenarioSetupWidget.h"
 #include <QVBoxLayout>
-#include <QComboBox>
 #include <QLineEdit>
 
 ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
@@ -30,7 +29,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 	auto* directory_subtitle_label = new QLabel("Victoria 2 directory path");
 	directory_subtitle_label->setObjectName("subtitle");
-	directory_path_label = new QLabel("Set game's directory path 123123123123");
+	directory_path_label = new QLabel("Set game's directory path");
 	directory_path_label->setObjectName("path");
 	directory_path_label->setAlignment(Qt::AlignCenter);
 	directory_path_label->setGraphicsEffect(getShadow());
@@ -52,9 +51,8 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	auto* mod_subtitle_label = new QLabel("Mod");
 	mod_subtitle_label->setObjectName("subtitle");
 
-	auto* mod_combobox = new QComboBox();
+	mod_combobox = new QComboBox();
 
-	mod_combobox->addItem("None");
 	mod_combobox->setGraphicsEffect(getShadow());
 	mod_combobox->setEnabled(true);
 
@@ -75,7 +73,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	
 
 	start_button->setGraphicsEffect(getShadow());
-	auto* hint_label = new QLabel("Starting the program might take awhile");
+	auto* hint_label = new QLabel("Starting the program might take a while");
 	hint_label->setObjectName("hint");
 
 
@@ -87,7 +85,8 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	content_layout->addWidget(hint_label, 0, Qt::AlignHCenter | Qt::AlignBottom);
 
 
-
+	//#cc9e5e
+	//#edbd79
 	widget->setObjectName("background");
 	widget->setStyleSheet(R"(
 		#background 
@@ -96,34 +95,41 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 			background-position: center;
 			background-repeat: no-repeat;
 		}
-
+		QWidget
+		{
+			font-family: Georgia;
+			color: #f5cc93;
+		}
+		
 		#title
 		{
 			background: none;
-			color: #E9E2CD;
 			font-size: 28px;
+			font-weight: bold;
 		}
 
 		#subtitle
 		{
 			background: none;
-			color: #E9E2CD;
 			font-size: 22px;
+			font-weight: bold;
 			
 		}
 				
 		
 		
-		QComboBox {
+		QComboBox 
+		{
 		    border-image: url(images/label_background.png) 9 13 9 10 stretch;
 		    border-width: 10px;
-		    color: #E9E2CD;
 		    font-size: 18px;
 		    padding: 2px 30px 2px 7px;
 		    background: transparent;
 		}
+
 		
-		QComboBox::drop-down {
+		QComboBox::drop-down 
+		{
 		    subcontrol-origin: margin;
 		    subcontrol-position: top right;
 		    width: 20px;
@@ -131,7 +137,8 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 			margin-right: 15px;
 		}
 		
-		QComboBox::down-arrow {
+		QComboBox::down-arrow 
+		{
 		    image: url(images/more_button.png);
 		    width: 26px;
 		    height: 26px;
@@ -142,10 +149,9 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 			background: #2b1d16;
 			border-image: url(images/label_background.png) 10 13 10 10 stretch;
 			border-width: 10px;
-			color: #E9E2CD;            /* Бежевий текст */
-			selection-background-color: #4e3427; /* Колір виділення (при наведенні мишкою) */
-			selection-color: #ffffff;            /* Колір тексту при наведенні */
-			outline: none;             /* Прибираємо пунктирну рамку фокусу */
+			selection-background-color: #4e3427;
+			selection-color: #ffffff;            
+			outline: none;             
 			border-style: solid;
 			padding: 0px;
 			margin: -5px;
@@ -153,7 +159,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		
 		QComboBox QAbstractItemView::item
 		{
-			min-height: 25px; /* Щоб пункти не були занадто зліплені */
+			min-height: 25px;
 			padding-left: 10px;
 		}
 
@@ -162,7 +168,6 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		{
 			border-image: url(images/label_background.png) 10 10 10 10 stretch;
 			border-width: 10px;
-			color: #E9E2CD;
 			font-size: 18px;
 			padding: 3px 7px;
 		}
@@ -171,18 +176,31 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		#button
 		{
 			border-image: url(images/button_background.png) 2 2 2 2 stretch;
-			color: #E9E2CD;
 			font-size: 24px;
 			padding: 3px 5px;
 			
+			font-weight: bold;
+			
+		}
+
+		#button:hover
+		{
+			border-image: url(images/pressed_button.png) 2 2 2 2 stretch;
+		
+		}
+		
+		
+		#button:pressed
+		{
+		    padding-left: 6px;
+		    padding-top: 6px;
 		}
 		
 		#hint
 		{
 			background: none;
-			color: #E9E2CD;
-			font-size: 16px;
-			
+			font-size: 14px;
+			font-style: italic;
 		}
 		
 		)");
@@ -192,17 +210,37 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	connect(browse_button, &QPushButton::pressed, this, [=]()
 		{
 			QString filepath = QFileDialog::getExistingDirectory();
+			hasValidPath = false;
+			clearMods();
 
 			if (!isValidPath(filepath))
+			{
+				directory_path_label->setText("Invalid path to game's directory");
 				return;
+			}
 
+			hasValidPath = true;
 			directory_path_label->setText(filepath);
+			getMods();
 
 		});
 
 	connect(start_button, &QPushButton::pressed, this, [=]()
 		{
-			emit startProgram(directory_path_label->text());
+			if (hasValidPath)
+			{
+				QString path = directory_path_label->text();
+
+				if (chosen_mod != "None" && !chosen_mod.isEmpty())
+					path += "/mod/" + chosen_mod;
+
+				emit startProgram(path);
+			}
+		});
+
+	connect(mod_combobox, &QComboBox::currentTextChanged, this, [=](const QString& mod)
+		{
+			chosen_mod = mod;
 		});
 }
 
@@ -240,5 +278,35 @@ QGraphicsDropShadowEffect* ScenarioSetupWidget::getShadow()
 	shadow->setColor(QColor(0, 0, 0, 160));
 
 	return shadow;
+}
+
+void ScenarioSetupWidget::getMods()
+{
+	QString game_path = directory_path_label->text();
+	QString mod_directory_path = game_path + "/mod";
+
+	QDir mod_directory(mod_directory_path);
+
+	auto mods = mod_directory.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+	addMod("None");
+	for (const auto& mod : mods)
+	{
+		QString mod_path = mod_directory_path + "/" + mod;
+		if (isValidPath(mod_path))
+			addMod(mod);
+	}
+
+}
+
+void ScenarioSetupWidget::addMod(const QString& mod_name)
+{
+	mod_combobox->addItem(mod_name);
+}
+
+void ScenarioSetupWidget::clearMods()
+{
+	chosen_mod = "None";
+	mod_combobox->clear();
 }
 

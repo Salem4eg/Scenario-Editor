@@ -71,6 +71,12 @@ void MapView::mousePressEvent(QMouseEvent* event)
 
 void MapView::mouseReleaseEvent(QMouseEvent* event)
 {
+	QGraphicsView::mouseReleaseEvent(event);
+
+	if (event->isAccepted())
+		return;
+
+
 	if (event->button() == Qt::LeftButton)
 	{
 		QPoint leftButtonEndPos = event->pos();
@@ -88,7 +94,6 @@ void MapView::mouseReleaseEvent(QMouseEvent* event)
 		}
 	}
 
-	QGraphicsView::mouseReleaseEvent(event);
 }
 
 void MapView::mouseMoveEvent(QMouseEvent* event)

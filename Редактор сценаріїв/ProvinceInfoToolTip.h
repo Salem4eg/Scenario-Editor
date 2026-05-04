@@ -20,6 +20,10 @@ signals:
 	void hideToolTip();
 	void showProvinceDetails();
 
+protected:
+	void mousePressEvent(QMouseEvent* event) override;
+	void mouseReleaseEvent(QMouseEvent* event) override;
+
 private:
 	QLabel* m_name;
 	QLabel* m_owner;

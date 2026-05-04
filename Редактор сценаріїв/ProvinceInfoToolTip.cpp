@@ -1,6 +1,7 @@
 #include "ProvinceInfoToolTip.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QMouseEvent>
 
 ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 	: QWidget(nullptr)
@@ -46,3 +47,14 @@ void ProvinceInfoToolTip::setInfo(const ProvinceInfo& info)
 	m_cores->setText("Cores: " + info.cores.join(", "));
 }
 
+void ProvinceInfoToolTip::mousePressEvent(QMouseEvent* event)
+{
+	//qDebug() << "Event accepted in tooltip";
+	event->accept();
+}
+
+void ProvinceInfoToolTip::mouseReleaseEvent(QMouseEvent* event)
+{
+	//qDebug() << "Event accepted in tooltip:releaseEvent";
+	event->accept();
+}

@@ -39,7 +39,6 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString directory, QWidget * parent):
     tooltip = scene->addWidget(province_tooltip);
     tooltip->hide();
     tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations);
-
    
 
     //view->prepare();

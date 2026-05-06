@@ -4,37 +4,74 @@
 #include <QMouseEvent>
 
 ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
-	: QWidget(nullptr)
+	: QWidget(parent)
 {
+	setObjectName("tooltip");
 	auto* main_layout = new QVBoxLayout(this);
 
 	auto* top_widget = new QWidget;
-	auto* central_widget = new QWidget;
-	// auto * bottom_widget = new QWidget; // space for province details
-
 	auto* top_layout = new QHBoxLayout(top_widget);
-	auto* central_layout = new QHBoxLayout(central_widget);
+	top_widget->setStyleSheet("background-color: red");
 
 	m_name = new QLabel("Province name");
-	auto* close_button = new QPushButton("Close"); // should cross image
+	m_name->setGraphicsEffect(getShadow());
+	top_layout->addWidget(m_name, 0, Qt::AlignHCenter);
 
-	top_layout->addStretch(1);
-	top_layout->addWidget(m_name, 2, Qt::AlignHCenter);
-	top_layout->addWidget(close_button, 1, Qt::AlignRight);
+	auto* middle_widget = new QWidget;
+	auto* middle_layout = new QHBoxLayout(middle_widget);
+	middle_widget->setStyleSheet("background-color: red");
 
 	m_owner = new QLabel("Owner: ");
 	m_cores = new QLabel("Cores: ");
+	m_owner->setGraphicsEffect(getShadow());
+	m_cores->setGraphicsEffect(getShadow());
 
-	central_layout->addWidget(m_owner, 0, Qt::AlignLeft);
-	central_layout->addWidget(m_cores, 0, Qt::AlignLeft);
+	middle_layout->addWidget(m_owner, 0, Qt::AlignLeft);
+	middle_layout->addWidget(m_cores, 0, Qt::AlignRight);
 
-	main_layout->addWidget(top_widget, 1);
-	main_layout->addWidget(central_widget, 4);
+	auto* bottom_widget = new QWidget;
+	auto* bottom_layout = new QHBoxLayout(bottom_widget);
+	bottom_widget->setStyleSheet("background-color: red");
+
+	auto* close_button = new QPushButton("Close");
+	close_button->setGraphicsEffect(getShadow());
+
+	bottom_layout->addWidget(close_button, 0, Qt::AlignHCenter);
+
+	main_layout->addWidget(top_widget);
+	main_layout->addWidget(middle_widget);
+	main_layout->addWidget(bottom_widget);
 
 	connect(close_button, &QPushButton::clicked, this, [this]()
 		{
 			emit hideToolTip();
 		});
+
+	//this->setStyleSheet(
+	//	R"(
+	//		QWidget
+	//		{
+	//			font-family: Georgia;
+	//			color: #f5cc93;
+	//		}
+	//		
+	//		#tooltip
+	//		{
+	//			border-image: url(images/province_tooltip.png) 2 2 2 2 stretch;
+	//			background-position: center;
+	//			background-repeat: no-repeat;
+	//		}
+	//		
+	//		QPushButton
+	//		{
+	//			border-image: url(images/button_background.png) 2 2 2 2 stretch;
+	//			font-weight: bold;
+	//		}
+	//		
+	//		
+	//		
+	//		
+	//	)");
 }
 
 ProvinceInfoToolTip::~ProvinceInfoToolTip()
@@ -57,4 +94,9 @@ void ProvinceInfoToolTip::mouseReleaseEvent(QMouseEvent* event)
 {
 	//qDebug() << "Event accepted in tooltip:releaseEvent";
 	event->accept();
+}
+
+QGraphicsDropShadowEffect* ProvinceInfoToolTip::getShadow()
+{
+	return new QGraphicsDropShadowEffect(this);
 }

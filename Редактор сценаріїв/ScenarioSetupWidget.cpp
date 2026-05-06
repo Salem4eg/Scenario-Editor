@@ -16,6 +16,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 	auto* title = new QLabel("Scenario Editor");
 	title->setObjectName("title");
+	title->setGraphicsEffect(getShadow());
 
 	auto* settings_panel = new QWidget;
 	//settings_panel->setStyleSheet("background: none; background-color: gray; ");
@@ -28,11 +29,12 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	auto* directory_setting_layout = new QVBoxLayout(directory_setting_container);
 
 	auto* directory_subtitle_label = new QLabel("Victoria 2 directory path");
+	directory_subtitle_label->setGraphicsEffect(getShadow());
 	directory_subtitle_label->setObjectName("subtitle");
+
 	directory_path_label = new QLabel("Set game's directory path");
 	directory_path_label->setObjectName("path");
 	directory_path_label->setAlignment(Qt::AlignCenter);
-	directory_path_label->setGraphicsEffect(getShadow());
 
 	browse_button = new QPushButton("Browse");
 	browse_button->setFixedSize(200, 50);
@@ -50,6 +52,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 	auto* mod_subtitle_label = new QLabel("Mod");
 	mod_subtitle_label->setObjectName("subtitle");
+	mod_subtitle_label->setGraphicsEffect(getShadow());
 
 	mod_combobox = new QComboBox();
 
@@ -69,19 +72,22 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	auto* start_button = new QPushButton("Start");
 	start_button->setObjectName("button");
 	start_button->setFixedSize(150, 60);
-
-	
-
 	start_button->setGraphicsEffect(getShadow());
+
+	progress_bar = new ProgressBar;
+	progress_bar->setGraphicsEffect(getShadow());
+	
 	auto* hint_label = new QLabel("Starting the program might take a while");
 	hint_label->setObjectName("hint");
-
+	hint_label->setGraphicsEffect(getShadow());
 
 	content_layout->setContentsMargins(20, 20, 20, 20);
 	content_layout->addWidget(title, 0, Qt::AlignHCenter | Qt::AlignTop);
+	content_layout->addSpacing(35);
 	content_layout->addWidget(settings_panel, 1);
 	content_layout->addStretch(1);
 	content_layout->addWidget(start_button, 0, Qt::AlignHCenter | Qt::AlignBottom);
+	content_layout->addWidget(progress_bar, 0, Qt::AlignHCenter | Qt::AlignBottom);
 	content_layout->addWidget(hint_label, 0, Qt::AlignHCenter | Qt::AlignBottom);
 
 
@@ -246,6 +252,11 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 ScenarioSetupWidget::~ScenarioSetupWidget()
 {}
+
+void ScenarioSetupWidget::addProgress(int value)
+{
+	progress_bar->addProgress(value);
+}
 
 bool ScenarioSetupWidget::isValidPath(const QString& directory_path)
 {

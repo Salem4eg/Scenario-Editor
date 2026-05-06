@@ -2,7 +2,7 @@
 
 Scenario_editor::Scenario_editor(QWidget* parent)
 {
-	auto setup = new ScenarioSetupWidget(this);
+	setup = new ScenarioSetupWidget(this);
 	setCentralWidget(setup);
 
 	setMinimumSize(setup->size());
@@ -28,24 +28,25 @@ void Scenario_editor::startProgram(QString directory_path)
 		return;
 
 	isStarted = true;
+
 	auto editor = new ScenarioEditorWidget(directory_path, this);
 
-	setCentralWidget(editor);
-	setMinimumSize(0, 0);
-	setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-	setWindowFlags(Qt::Window |
-		Qt::WindowMinimizeButtonHint |
-		Qt::WindowMaximizeButtonHint |
-		Qt::WindowCloseButtonHint);
+	connect(editor, &ScenarioEditorWidget::isReadyToShow, this, [=]()
+		{
+			setCentralWidget(editor);
+			setMinimumSize(0, 0);
+			setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+			setWindowFlags(Qt::Window |
+				Qt::WindowMinimizeButtonHint |
+				Qt::WindowMaximizeButtonHint |
+				Qt::WindowCloseButtonHint);
 
-	show();
-	resize(editor->size());
+			show();
+			resize(editor->size());
+		});
 
-	//connect(editor, &ScenarioEditorWidget::isReadyToShow, this, [=]()
-	//	{
-	//		
-	//	});
+	connect(editor, &ScenarioEditorWidget::progressMade, setup, &ScenarioSetupWidget::addProgress);
 
-	//editor->prepare();
+	editor->prepare();
 	
 }

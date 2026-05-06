@@ -19,7 +19,7 @@ public:
 	~MapView();
 
 public slots:
-	//void prepare();
+	void prepare();
 
 	QRgb GetCountryColor(QString tag);
 	QList<QList<QPoint>> getProvincesPixels(QList<int> provinces);
@@ -38,6 +38,8 @@ signals:
 	void highlightProvinces(bool highlight);
 	void addProvinceToHighlight(const QList<QPoint>& province_pixels, int provinceID);
 	void removeProvinceFromHighlight(const QList<QPoint>& province_pixels, int provinceID);
+
+	void progressMade(int progress);
 
 protected:
 	void wheelEvent(QWheelEvent* event) override;

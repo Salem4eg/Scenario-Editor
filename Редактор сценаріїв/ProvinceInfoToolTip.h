@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QPushButton>
+#include <QGraphicsEffect>
 #include "Structures.h"
 
 class ProvinceInfoToolTip : public QWidget
@@ -28,5 +29,7 @@ private:
 	QLabel* m_name;
 	QLabel* m_owner;
 	QLabel* m_cores;
+
+	QGraphicsDropShadowEffect* getShadow();
 };
 

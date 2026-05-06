@@ -16,16 +16,7 @@ MapView::MapView(QString directory, QGraphicsScene* scene, QWidget* parent): QGr
 	province_map.load(provinces_path);
 	province_map.flip(Qt::Vertical);
 
-	startDebugTimer();
-
-
-	readProvincesDefinition();
-	assignPixelsToProvince();
-	assignColorToCountries();
-	getCountries_provinces();
-
-
-	endDebugTimer();
+	
 
 	connect(&highlight_timer, &QTimer::timeout, this, &MapView::highlightChosenProvinces);
 }
@@ -33,10 +24,43 @@ MapView::MapView(QString directory, QGraphicsScene* scene, QWidget* parent): QGr
 MapView::~MapView()
 {}
 
-//void MapView::prepare()
-//{
-//	
-//}
+void MapView::prepare()
+{
+	startDebugTimer();
+
+
+	
+
+	readProvincesDefinition();
+	QtConcurrent::run([this]()
+		{
+			emit progressMade(5);
+		});
+
+
+	assignPixelsToProvince();
+	QtConcurrent::run([this]()
+		{
+			emit progressMade(35);
+		});
+
+
+	assignColorToCountries();
+	QtConcurrent::run([this]()
+		{
+			emit progressMade(5);
+		});
+
+
+	getCountries_provinces();
+	QtConcurrent::run([this]()
+		{
+			emit progressMade(5);
+		});
+
+
+	endDebugTimer();
+}
 
 void MapView::wheelEvent(QWheelEvent* event)
 {
@@ -50,7 +74,7 @@ void MapView::wheelEvent(QWheelEvent* event)
 	}
 	else
 	{
-		if (scale_step > -4)
+		if (scale_step > -3)
 		{
 			scale(0.8, 0.8);
 			scale_step--;

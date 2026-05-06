@@ -21,10 +21,11 @@ public:
 	~ScenarioEditorWidget();
 
 public slots:
-    //void prepare();
+    void prepare();
 
 signals:
-    //void isReadyToShow();
+    void isReadyToShow();
+	void progressMade(int progress);
 
 
 protected:

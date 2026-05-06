@@ -18,6 +18,7 @@ protected:
     
 private:
     bool isStarted = false;
+    ScenarioSetupWidget* setup;
 
 };
 

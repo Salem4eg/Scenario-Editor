@@ -97,6 +97,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ProgressBar.cpp" />
     <ClCompile Include="SidePanel.cpp" />
     <QtMoc Include="Scenario_editor.h" />
     <ClCompile Include="FileReader.cpp" />
@@ -116,6 +117,7 @@
     <QtMoc Include="ScenarioSetupWidget.h" />
     <ClInclude Include="FileReader.h" />
     <QtMoc Include="SidePanel.h" />
+    <QtMoc Include="ProgressBar.h" />
     <ClInclude Include="Structures.h" />
     <QtMoc Include="ProvinceInfoToolTip.h" />
     <ClInclude Include="Province_manager.h" />

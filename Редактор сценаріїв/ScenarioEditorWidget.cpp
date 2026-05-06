@@ -4,6 +4,7 @@
 #include <QLineEdit>
 #include <QCompleter>
 #include <QDir>
+#include <QtConcurrent/QtConcurrent>
 
 ScenarioEditorWidget::ScenarioEditorWidget(QString directory, QWidget * parent): QWidget(parent)
 {
@@ -30,35 +31,52 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString directory, QWidget * parent):
     view_layout->addWidget(side_panel, 0, Qt::AlignBottom);
     view_layout->setContentsMargins(10, 0, 0, 20);
 
-    
-
     side_panel->show();
 
 
     province_tooltip = new ProvinceInfoToolTip;
     tooltip = scene->addWidget(province_tooltip);
     tooltip->hide();
-    tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations);
-   
-
-    //view->prepare();
-    set_map();
-    make_connections();
+    tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations); 
 
 
-    countries_map_item->setZValue(0);
-    highlight_map_item->setZValue(1);
-    tooltip->setZValue(2);
+	connect(view, &MapView::progressMade, this, &ScenarioEditorWidget::progressMade);
 }
 
 
 ScenarioEditorWidget::~ScenarioEditorWidget()
 {}
 
+void ScenarioEditorWidget::prepare()
+{
+	QtConcurrent::run([this]()
+    {
+        view->prepare();
+
+        set_map();
+
+        
+
+        make_connections();
+
+        countries_map_item->setZValue(0);
+        highlight_map_item->setZValue(1);
+        tooltip->setZValue(2);
+
+        emit isReadyToShow();
+    });
+}
+
 void ScenarioEditorWidget::set_map()
 {
     QImage countries_view_map = view->GetCountriesViewMap();
     borders_view_map = view->GetBordersViewMap();
+    QtConcurrent::run([this]()
+        {
+            emit progressMade(45);
+        });
+
+
     QImage highlight_layer = QImage(countries_view_map.size(), QImage::Format_ARGB32);
     highlight_layer.fill(Qt::transparent);
 
@@ -66,6 +84,10 @@ void ScenarioEditorWidget::set_map()
     highlight_map_item = scene->addPixmap(QPixmap::fromImage(highlight_layer));
 
     PaintBordersOverCountriesViewMap();
+    QtConcurrent::run([this]()
+        {
+            emit progressMade(5);
+        });
 }
 
 void ScenarioEditorWidget::make_connections()

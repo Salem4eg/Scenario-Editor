@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QGraphicsEffect>
 #include <QComboBox>
+#include "ProgressBar.h"
 
 class ScenarioSetupWidget : public QWidget
 {
@@ -14,6 +15,8 @@ class ScenarioSetupWidget : public QWidget
 public:
 	ScenarioSetupWidget(QWidget *parent = nullptr);
 	~ScenarioSetupWidget();
+
+	void addProgress(int value);
 
 
 signals:
@@ -25,6 +28,7 @@ private:
 	QComboBox* mod_combobox;
 	bool hasValidPath = false;
 	QString chosen_mod = "None";
+	ProgressBar* progress_bar;
 
 	bool isValidPath(const QString& directory_path);
 	QGraphicsDropShadowEffect* getShadow();

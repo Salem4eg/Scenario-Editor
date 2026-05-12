@@ -35,6 +35,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	directory_path_label = new QLabel("Set game's directory path");
 	directory_path_label->setObjectName("path");
 	directory_path_label->setAlignment(Qt::AlignCenter);
+	directory_path_label->setGraphicsEffect(getShadow());
 
 	browse_button = new QPushButton("Browse");
 	browse_button->setFixedSize(200, 50);
@@ -97,7 +98,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	widget->setStyleSheet(R"(
 		#background 
 		{ 
-			background-image: url(images/setup_widget_background_normal.png);
+			background-image: url(images/setup.png);
 			background-position: center;
 			background-repeat: no-repeat;
 		}
@@ -126,7 +127,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		
 		QComboBox 
 		{
-		    border-image: url(images/label_background.png) 9 13 9 10 stretch;
+		    border-image: url(images/label.png) 9 13 9 10 stretch;
 		    border-width: 10px;
 		    font-size: 18px;
 		    padding: 2px 30px 2px 7px;
@@ -145,7 +146,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		
 		QComboBox::down-arrow 
 		{
-		    image: url(images/more_button.png);
+		    image: url(images/arrow_down.png);
 		    width: 26px;
 		    height: 26px;
 		}
@@ -153,7 +154,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		QComboBox QAbstractItemView
 		{
 			background: #2b1d16;
-			border-image: url(images/label_background.png) 10 13 10 10 stretch;
+			border-image: url(images/label.png) 10 13 10 10 stretch;
 			border-width: 10px;
 			selection-background-color: #4e3427;
 			selection-color: #ffffff;            
@@ -172,7 +173,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		
 		#path
 		{
-			border-image: url(images/label_background.png) 10 10 10 10 stretch;
+			border-image: url(images/label.png) 10 10 10 10 stretch;
 			border-width: 10px;
 			font-size: 18px;
 			padding: 3px 7px;
@@ -181,7 +182,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		
 		#button
 		{
-			border-image: url(images/button_background.png) 2 2 2 2 stretch;
+			border-image: url(images/button.png) 2 2 2 2 stretch;
 			font-size: 24px;
 			padding: 3px 5px;
 			
@@ -191,7 +192,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 		#button:hover
 		{
-			border-image: url(images/pressed_button.png) 2 2 2 2 stretch;
+			border-image: url(images/button_hovered.png) 2 2 2 2 stretch;
 		
 		}
 		

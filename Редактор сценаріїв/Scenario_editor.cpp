@@ -1,5 +1,6 @@
 #include "Scenario_editor.h"
 
+
 Scenario_editor::Scenario_editor(QWidget* parent)
 {
 	setup = new ScenarioSetupWidget(this);

@@ -37,7 +37,7 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString directory, QWidget * parent):
     province_tooltip = new ProvinceInfoToolTip;
     tooltip = scene->addWidget(province_tooltip);
     tooltip->hide();
-    tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations); 
+    tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations);
 
 
 	connect(view, &MapView::progressMade, this, &ScenarioEditorWidget::progressMade);

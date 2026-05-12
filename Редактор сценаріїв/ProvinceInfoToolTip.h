@@ -24,12 +24,11 @@ signals:
 protected:
 	void mousePressEvent(QMouseEvent* event) override;
 	void mouseReleaseEvent(QMouseEvent* event) override;
+	void mouseMoveEvent(QMouseEvent* event) override;
 
 private:
 	QLabel* m_name;
 	QLabel* m_owner;
 	QLabel* m_cores;
-
-	QGraphicsDropShadowEffect* getShadow();
 };
 

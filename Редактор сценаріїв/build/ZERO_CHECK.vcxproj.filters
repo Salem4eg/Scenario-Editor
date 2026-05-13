@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\build\CMakeFiles\b57ee65df0e23f8f316776416913101e\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{DCFDE6F2-E9FC-3426-AE07-B727E3CB7697}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

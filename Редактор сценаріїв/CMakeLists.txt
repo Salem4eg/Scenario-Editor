@@ -43,7 +43,6 @@ source_group("Header files" FILES ${HEADERS})
 qt_add_executable(ScenarioEditor
 	${SOURCES}
 	${HEADERS}
-	Resource.qrc
 )
 
 add_custom_command(TARGET ScenarioEditor POST_BUILD

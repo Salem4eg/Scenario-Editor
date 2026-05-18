@@ -7,6 +7,7 @@
 #include <QGraphicsEffect>
 #include <QComboBox>
 #include "ProgressBar.h"
+#include <QJsonObject>
 
 class ScenarioSetupWidget : public QWidget
 {
@@ -34,9 +35,10 @@ private:
 	QGraphicsDropShadowEffect* getShadow();
 	void getMods();
 
-
+	void setGamePath(const QString& directory_path);
 	void addMod(const QString& mod_name);
 	void clearMods();
-
+	void saveSettings();
+	void loadSettings();
 };
 

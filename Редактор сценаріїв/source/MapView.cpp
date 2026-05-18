@@ -3,7 +3,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QRegularexpression>
 
-MapView::MapView(QString directory, QGraphicsScene* scene, QWidget* parent): QGraphicsView(scene, parent)
+MapView::MapView(QString directory, QGraphicsScene* scene, QWidget* parent): QGraphicsView(scene, parent), enable_province_choosing(false)
 {
 	directory_path = directory;
 	QDir dir(directory);
@@ -26,10 +26,10 @@ MapView::~MapView()
 
 void MapView::prepare()
 {
+
+
+	qDebug() << "readProvincesDefinition()";
 	startDebugTimer();
-
-
-	
 
 	readProvincesDefinition();
 	QtConcurrent::run([this]()
@@ -37,29 +37,38 @@ void MapView::prepare()
 			emit progressMade(5);
 		});
 
+	endDebugTimer();
 
+	qDebug() << "assignPixelsToProvince()";
+	startDebugTimer();
+	
 	assignPixelsToProvince();
 	QtConcurrent::run([this]()
 		{
 			emit progressMade(35);
 		});
+	endDebugTimer();
 
+	qDebug() << "assignColorToCountries()";
+	startDebugTimer();
 
 	assignColorToCountries();
 	QtConcurrent::run([this]()
 		{
 			emit progressMade(5);
 		});
+	endDebugTimer();
 
-
+	qDebug() << "getCountries_provinces()";
+	startDebugTimer();
 	getCountries_provinces();
 	QtConcurrent::run([this]()
 		{
 			emit progressMade(5);
 		});
-
-
 	endDebugTimer();
+
+
 }
 
 void MapView::wheelEvent(QWheelEvent* event)

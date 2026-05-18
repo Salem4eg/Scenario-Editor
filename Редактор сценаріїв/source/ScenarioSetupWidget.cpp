@@ -226,9 +226,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 				return;
 			}
 
-			hasValidPath = true;
-			directory_path_label->setText(filepath);
-			getMods();
+			setGamePath(filepath);
 
 		});
 
@@ -249,10 +247,15 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 		{
 			chosen_mod = mod;
 		});
+
+	loadSettings();
 }
 
 ScenarioSetupWidget::~ScenarioSetupWidget()
-{}
+{
+	if (hasValidPath)
+		saveSettings();
+}
 
 void ScenarioSetupWidget::addProgress(int value)
 {
@@ -311,6 +314,13 @@ void ScenarioSetupWidget::getMods()
 
 }
 
+void ScenarioSetupWidget::setGamePath(const QString& directory_path)
+{
+	hasValidPath = true;
+	directory_path_label->setText(directory_path);
+	getMods();
+}
+
 void ScenarioSetupWidget::addMod(const QString& mod_name)
 {
 	mod_combobox->addItem(mod_name);
@@ -320,5 +330,54 @@ void ScenarioSetupWidget::clearMods()
 {
 	chosen_mod = "None";
 	mod_combobox->clear();
+}
+
+void ScenarioSetupWidget::saveSettings()
+{
+	QJsonObject settings;
+
+	settings["game_path"] = directory_path_label->text();
+	settings["chosen_mod"] = chosen_mod;
+
+	QJsonDocument doc(settings);
+
+	QFile file("settings.json");
+
+	if (file.open(QIODevice::WriteOnly))
+	{
+		file.write(doc.toJson(QJsonDocument::Indented));
+		file.close();
+	}
+}
+
+void ScenarioSetupWidget::loadSettings()
+{
+	QFile file("settings.json");
+
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		return;
+	}
+
+	QByteArray data = file.readAll();
+
+	QJsonDocument doc = QJsonDocument::fromJson(data);
+
+	QJsonObject settings = doc.object();
+
+	if (const QJsonValue path_value = settings["game_path"]; path_value.isString())
+	{
+		setGamePath(path_value.toString());
+
+		if (const QJsonValue mod_value = settings["chosen_mod"]; mod_value.isString())
+		{
+			chosen_mod = mod_value.toString();
+
+			int index = mod_combobox->findText(chosen_mod);
+			if (index != -1)
+				mod_combobox->setCurrentIndex(index);
+		}
+	}
+	
 }
 

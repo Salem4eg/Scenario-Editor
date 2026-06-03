@@ -65,19 +65,19 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 
 		QPushButton
 		{
-			border-image: url(images/small_button.png) 2 2 2 2 stretch;
+			border-image: url(../images/small_button.png) 2 2 2 2 stretch;
 			font-weight: bold;
 			font-size: 18px;
 		}
 
 		QPushButton:hover
 		{
-			border-image: url(images/small_button_hovered.png) 2 2 2 2 stretch;
+			border-image: url(../images/small_button_hovered.png) 2 2 2 2 stretch;
 		}
 
 		#tooltip
 		{
-			background-image: url(images/tooltip.png) 2 2 2 2 stretch;
+			background-image: url(../images/tooltip.png) 2 2 2 2 stretch;
 			background-position: center;
 			background-repeat: no-repeat;
 		}

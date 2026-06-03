@@ -112,25 +112,25 @@ SidePanel::SidePanel(QWidget *parent)
             
             QPushButton
             {
-                border-image: url(images/button.png) 2 2 2 4 stretch;
+                border-image: url(../images/button.png) 2 2 2 4 stretch;
             
             }
             
             QPushButton:hover
             {
-                border-image: url(images/button_hovered.png) 2 2 2 2 stretch;
+                border-image: url(../images/button_hovered.png) 2 2 2 2 stretch;
             
             
             }
             
             QLabel
             {
-                border-image: url(images/label.png) 2 2 2 2 stretch;
+                border-image: url(../images/label.png) 2 2 2 2 stretch;
             }
             
             QComboBox 
 		    {
-		        border-image: url(images/test_combobox.png) 9 13 9 10 stretch;
+		        border-image: url(../images/test_combobox.png) 9 13 9 10 stretch;
 		        border-width: 10px;
 		        font-size: 14px;
 		        padding: 2px 2px 2px 2px;
@@ -149,7 +149,7 @@ SidePanel::SidePanel(QWidget *parent)
 		    
 		    QComboBox::down-arrow 
 		    {
-		        image: url(images/arrow_down.png);
+		        image: url(../images/arrow_down.png);
 		        width: 26px;
 		        height: 26px;
 		    }
@@ -157,7 +157,7 @@ SidePanel::SidePanel(QWidget *parent)
 		    QComboBox QAbstractItemView
 		    {
 		    	background: #2b1d16;
-		    	border-image: url(images/combobox_list.png) 10 13 10 10 stretch;
+		    	border-image: url(../images/combobox_list.png) 10 13 10 10 stretch;
 		    	border-width: 10px;
 		    	selection-background-color: #4e3427;
 		    	selection-color: #ffffff;            
@@ -234,7 +234,7 @@ void SidePanel::fill_countries_list()
             QAbstractItemView
             {
                 background: #2b1d16;
-                border-image: url(images/combobox_list.png) 10 13 10 10 stretch;
+                border-image: url(../images/combobox_list.png) 10 13 10 10 stretch;
                 border-width: 10px;
                 border-style: solid;
             

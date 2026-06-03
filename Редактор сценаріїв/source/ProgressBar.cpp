@@ -4,8 +4,8 @@
 ProgressBar::ProgressBar(QWidget *parent)
 	: QWidget(parent)
 {
-	frame = QPixmap("images/progress_bar_frame.png");
-	progress = QPixmap("images/progress_bar_without_frame.png");
+	frame = QPixmap("../images/progress_bar_frame.png");
+	progress = QPixmap("../images/progress_bar_without_frame.png");
 
 	setFixedSize(frame.size());
 

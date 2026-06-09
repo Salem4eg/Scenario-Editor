@@ -77,6 +77,11 @@ int MapDataManager::provinceAt(int x, int y)
 	return province;
 }
 
+QList<QPoint> MapDataManager::pixelsOfProvince(int provinceID)
+{
+	return image_processor->pixelsOfProvince(provinceID);
+}
+
 QList<QList<QPoint>> MapDataManager::pixelsOfProvinces(QList<int> provinces)
 {
 	QList<QList<QPoint>> result;
@@ -85,6 +90,11 @@ QList<QList<QPoint>> MapDataManager::pixelsOfProvinces(QList<int> provinces)
 		result.push_back(pixelsOfProvince(province));
 
 	return result;
+}
+
+QRgb MapDataManager::colorOfCountry(QString countryTag)
+{
+	return image_processor->colorOfCountry(countryTag);
 }
 
 void MapDataManager::addChosenProvince(int provinceID)
@@ -114,6 +124,16 @@ void MapDataManager::clearChosenProvinces()
 	}
 
 	chosen_provinces.clear();
+}
+
+QImage MapDataManager::getBordersViewMap()
+{
+	return image_processor->GetBordersViewMap();
+}
+
+QImage MapDataManager::getCountriesViewMap()
+{
+	return image_processor->GetCountriesViewMap();
 }
 
 void MapDataManager::startDebugTimer()

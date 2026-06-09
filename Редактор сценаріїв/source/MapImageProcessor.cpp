@@ -206,6 +206,16 @@ QImage MapImageProcessor::GetCountriesViewMap()
 	return countries_view_map;
 }
 
+QRgb MapImageProcessor::colorOfCountry(QString countryTag)
+{
+	return countries_color.value(countryTag, QRgb());
+}
+
+QList<QPoint> MapImageProcessor::pixelsOfProvince(int province)
+{
+	return province_pixels.value(province, QList<QPoint>());
+}
+
 void MapImageProcessor::setCountriesProvinces(const QHash<QString, QList<int>>& countries_provinces)
 {
 	this->countries_provinces = countries_provinces;

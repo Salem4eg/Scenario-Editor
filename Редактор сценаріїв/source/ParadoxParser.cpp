@@ -5,7 +5,7 @@ ParadoxParser::ParadoxParser(QString directory, QString save_file, QObject *pare
 {
 	directory_path = directory;
 	save_file_path = save_file;
-	save_file_exists = save_file_path.isEmpty() ? true : false;
+	save_file_exists = save_file_path.isEmpty() ? false : true;
 	QDir dir(directory);
 
 	provinces_definition = dir.filePath("map/definition.csv");
@@ -155,7 +155,6 @@ void ParadoxParser::extractCountriesColors(QList<QPair<QString, QString>>& count
 	}
 	game_data.countries_color.insert("NO_OWNER", qRgb(50, 50, 50));
 }
-
 
 void ParadoxParser::loadCountriesProvinces(ParadoxGameData& game_data)
 {

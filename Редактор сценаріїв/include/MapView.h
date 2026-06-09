@@ -24,8 +24,8 @@ public slots:
 	QRgb GetCountryColor(QString tag);
 	QList<QList<QPoint>> getProvincesPixels(QList<int> provinces);
 
-	QImage GetBordersViewMap();
-	QImage GetCountriesViewMap();
+	QImage getBordersViewMap();
+	QImage getCountriesViewMap();
 
 	void setProvinceChoosingMode(bool choose);
 	void showHighlighting(bool show);

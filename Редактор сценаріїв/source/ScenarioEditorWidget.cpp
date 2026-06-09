@@ -69,8 +69,8 @@ void ScenarioEditorWidget::prepare()
 
 void ScenarioEditorWidget::set_map()
 {
-    QImage countries_view_map = view->GetCountriesViewMap();
-    borders_view_map = view->GetBordersViewMap();
+    QImage countries_view_map = view->getCountriesViewMap();
+    borders_view_map = view->getBordersViewMap();
     QtConcurrent::run([this]()
         {
             emit progressMade(45);

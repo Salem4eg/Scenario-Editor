@@ -1,5 +1,7 @@
 #pragma once
 #include <QString>
+#include <QHash>
+#include <QRgb>
 #include <QStringList>
 
 struct ProvinceInfo

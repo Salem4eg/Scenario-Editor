@@ -162,3 +162,13 @@ QList<QList<QPoint>> MapView::getProvincesPixels(QList<int> provinces)
 	return data_manager->pixelsOfProvinces(provinces);
 }
 
+QImage MapView::getBordersViewMap()
+{
+	return data_manager->getBordersViewMap();
+}
+
+QImage MapView::getCountriesViewMap()
+{
+	return data_manager->getCountriesViewMap();
+}
+

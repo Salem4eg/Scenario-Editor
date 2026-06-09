@@ -22,6 +22,8 @@ public slots:
 	QImage GetBordersViewMap();
 	QImage GetCountriesViewMap();
 
+	QRgb colorOfCountry(QString countryTag);
+	QList<QPoint> pixelsOfProvince(int province);
 
 	// Must be set before calling GetCountriesViewMap
 	void setCountriesProvinces(const QHash<QString, QList<int>>& countries_provinces);

@@ -28,6 +28,9 @@ public:
 	const QList<int>& getChosenProvinces() const;
 	void clearChosenProvinces();
 
+	QImage getBordersViewMap();
+	QImage getCountriesViewMap();
+
 signals:
 	void progressMade(int progress);
 	void addProvinceToHighlight(const QList<QPoint>& province_pixels, int provinceID);

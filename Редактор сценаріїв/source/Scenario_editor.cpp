@@ -23,14 +23,14 @@ Scenario_editor::~Scenario_editor()
 
 }
 
-void Scenario_editor::startProgram(QString directory_path)
+void Scenario_editor::startProgram(QString gameDirectory, QString saveFile)
 {
 	if (isStarted)
 		return;
 
 	isStarted = true;
 
-	auto editor = new ScenarioEditorWidget(directory_path, this);
+	auto editor = new ScenarioEditorWidget(gameDirectory, saveFile, this);
 
 	connect(editor, &ScenarioEditorWidget::isReadyToShow, this, [=]()
 		{

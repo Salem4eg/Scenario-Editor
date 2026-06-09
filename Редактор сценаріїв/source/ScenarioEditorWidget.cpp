@@ -6,17 +6,17 @@
 #include <QDir>
 #include <QtConcurrent/QtConcurrent>
 
-ScenarioEditorWidget::ScenarioEditorWidget(QString directory, QWidget * parent): QWidget(parent)
+ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFile, QWidget * parent): QWidget(parent)
 {
     resize(1200, 800);
 
-    QDir dir(directory);
+    QDir dir(gameDirectory);
     QString provinces_path(dir.filePath("history/provinces"));
 
     auto* main_layout = new QVBoxLayout(this);
 
     scene = new QGraphicsScene(this);
-    view = new MapView(directory, scene, this);
+    view = new MapView(gameDirectory, saveFile, scene, this);
     province_manager = new Province_manager(provinces_path);
 
     main_layout->addWidget(view);

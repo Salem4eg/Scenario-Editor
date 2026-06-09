@@ -12,7 +12,7 @@ public:
     Scenario_editor(QWidget *parent = nullptr);
     ~Scenario_editor();
 
-    void startProgram(QString directory_path);
+    void startProgram(QString gameDirectory, QString saveFile);
 
 protected:
     

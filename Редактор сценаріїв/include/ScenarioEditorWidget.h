@@ -17,7 +17,7 @@ class ScenarioEditorWidget : public QWidget
 	Q_OBJECT
 
 public:
-	ScenarioEditorWidget(QString directory, QWidget *parent = nullptr);
+	ScenarioEditorWidget(QString gameDirectory, QString saveFile, QWidget *parent = nullptr);
 	~ScenarioEditorWidget();
 
 public slots:

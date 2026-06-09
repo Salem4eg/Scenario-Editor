@@ -12,6 +12,9 @@ qt_standard_project_setup()
 set(HEADERS
 	include/FileReader.h
 	include/MapView.h
+	include/MapImageProcessor.h
+	include/MapDataManager.h
+	include/ParadoxParser.h
 	include/ProgressBar.h
 	include/Province_manager.h
 	include/ProvinceInfoToolTip.h
@@ -26,6 +29,9 @@ set(SOURCES
 	source/main.cpp
 	source/FileReader.cpp
 	source/MapView.cpp
+	source/MapDataManager.cpp
+	source/MapImageProcessor.cpp
+	source/ParadoxParser.cpp
 	source/ProgressBar.cpp
 	source/Province_manager.cpp
 	source/ProvinceInfoToolTip.cpp

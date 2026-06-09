@@ -19,14 +19,11 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	title->setGraphicsEffect(getShadow());
 
 	auto* settings_panel = new QWidget;
-	//settings_panel->setStyleSheet("background: none; background-color: gray; ");
-	//settings_panel->setFixedSize(800, 200);
 	auto* settings_panel_layout = new QHBoxLayout(settings_panel);
 
-	auto* directory_setting_container = new QWidget;
-	//directory_setting_container->setFixedSize(200, 200);
-	//directory_setting_container->setStyleSheet("background: none; background-color: yellow; ");
-	auto* directory_setting_layout = new QVBoxLayout(directory_setting_container);
+	// Left part of settings panel contains directory path setting
+	auto* left_container = new QWidget;
+	auto* left_container_layout = new QVBoxLayout(left_container);
 
 	auto* directory_subtitle_label = new QLabel("Victoria 2 directory path");
 	directory_subtitle_label->setGraphicsEffect(getShadow());
@@ -37,19 +34,18 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	directory_path_label->setAlignment(Qt::AlignCenter);
 	directory_path_label->setGraphicsEffect(getShadow());
 
-	browse_button = new QPushButton("Browse");
-	browse_button->setFixedSize(200, 50);
-	browse_button->setObjectName("button");
-	browse_button->setGraphicsEffect(getShadow());
+	directory_browse_button = new QPushButton("Browse");
+	directory_browse_button->setFixedSize(150, 50); 
+	directory_browse_button->setObjectName("button");
+	directory_browse_button->setGraphicsEffect(getShadow());
 
-	directory_setting_layout->addWidget(directory_subtitle_label, 1, Qt::AlignHCenter);
-	directory_setting_layout->addWidget(directory_path_label, 1);
-	directory_setting_layout->addWidget(browse_button, 1, Qt::AlignHCenter);
+	left_container_layout->addWidget(directory_subtitle_label, 1, Qt::AlignHCenter);
+	left_container_layout->addWidget(directory_path_label, 1);
+	left_container_layout->addWidget(directory_browse_button, 1, Qt::AlignHCenter);
 
-	auto* mod_setting_container = new QWidget;
-	//mod_setting_container->setFixedSize(200, 200);
-	//mod_setting_container->setStyleSheet("background: none; background-color: blue; ");
-	auto* mod_setting_layout = new QVBoxLayout(mod_setting_container);
+	// right part of settings panel contains mod selection and save file setting
+	auto* right_container = new QWidget;
+	auto* right_container_layout = new QVBoxLayout(right_container);
 
 	auto* mod_subtitle_label = new QLabel("Mod");
 	mod_subtitle_label->setObjectName("subtitle");
@@ -60,19 +56,36 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	mod_combobox->setGraphicsEffect(getShadow());
 	mod_combobox->setEnabled(true);
 
-	mod_setting_layout->addWidget(mod_subtitle_label, 1, Qt::AlignHCenter);
-	mod_setting_layout->addWidget(mod_combobox, 1, Qt::AlignHCenter);
-	mod_setting_layout->addStretch(1);
+	auto* savefile_subtitle_label = new QLabel("Save file");
+	savefile_subtitle_label->setGraphicsEffect(getShadow());
+	savefile_subtitle_label->setObjectName("subtitle");
+
+	savefile_path_label = new QLabel("Set save file path or leave blank");
+	savefile_path_label->setObjectName("path");
+	savefile_path_label->setAlignment(Qt::AlignCenter);
+	savefile_path_label->setGraphicsEffect(getShadow());
+
+	savefile_browse_button = new QPushButton("Browse");
+	savefile_browse_button->setFixedSize(150, 50);
+	savefile_browse_button->setObjectName("button");
+	savefile_browse_button->setGraphicsEffect(getShadow());
 
 
-	settings_panel_layout->addWidget(directory_setting_container, 1, Qt::AlignHCenter | Qt::AlignTop);
+	right_container_layout->addWidget(mod_subtitle_label, 1, Qt::AlignHCenter);
+	right_container_layout->addWidget(mod_combobox, 1, Qt::AlignHCenter);
+	right_container_layout->addWidget(savefile_subtitle_label, 1, Qt::AlignHCenter);
+	right_container_layout->addWidget(savefile_path_label, 1, Qt::AlignHCenter);
+	right_container_layout->addStretch(1);
+
+
+	settings_panel_layout->addWidget(left_container, 1, Qt::AlignHCenter | Qt::AlignTop);
 	settings_panel_layout->addStretch(1);
-	settings_panel_layout->addWidget(mod_setting_container, 1, Qt::AlignHCenter | Qt::AlignTop);
+	settings_panel_layout->addWidget(right_container, 1, Qt::AlignHCenter | Qt::AlignTop);
 	settings_panel_layout->setContentsMargins(30, 0, 30, 0);
 
 	auto* start_button = new QPushButton("Start");
 	start_button->setObjectName("button");
-	start_button->setFixedSize(150, 60);
+	start_button->setFixedSize(150, 50);
 	start_button->setGraphicsEffect(getShadow());
 
 	progress_bar = new ProgressBar;
@@ -214,7 +227,7 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 	setFixedSize(800,500);
 
-	connect(browse_button, &QPushButton::pressed, this, [=]()
+	connect(directory_browse_button, &QPushButton::pressed, this, [=]()
 		{
 			QString filepath = QFileDialog::getExistingDirectory();
 			hasValidPath = false;
@@ -227,19 +240,40 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 			}
 
 			setGamePath(filepath);
+		});
 
+	connect(savefile_browse_button, &QPushButton::pressed, this, [=]()
+		{
+			savefile.clear();
+			
+			QString filepath = QFileDialog::getOpenFileName(this, "Select save file", "", "Save files (*.v2)");
+
+			if (filepath.isEmpty())
+			{
+				savefile_path_label->setText("Set save file path or leave blank");
+				return;
+			}
+
+			if (!isSavefile(filepath))
+			{
+				savefile_path_label->setText("Invalid save file");
+				return;
+			}
+
+			savefile_path_label->setText(getFilename(filepath));
+			savefile = filepath;
 		});
 
 	connect(start_button, &QPushButton::pressed, this, [=]()
 		{
 			if (hasValidPath)
 			{
-				QString path = directory_path_label->text();
+				QString directoryPath = directory_path_label->text();
 
 				if (chosen_mod != "None" && !chosen_mod.isEmpty())
-					path += "/mod/" + chosen_mod;
+					directoryPath += "/mod/" + chosen_mod;
 
-				emit startProgram(path);
+				emit startProgram(directoryPath, savefile);
 			}
 		});
 
@@ -379,5 +413,15 @@ void ScenarioSetupWidget::loadSettings()
 		}
 	}
 	
+}
+
+QString ScenarioSetupWidget::getFilename(const QString& path)
+{
+	return QFileInfo(path).fileName();
+}
+
+bool ScenarioSetupWidget::isSavefile(const QString& path)
+{
+	return QFileInfo(path).suffix() == "v2";
 }
 

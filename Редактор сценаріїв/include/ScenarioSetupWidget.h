@@ -21,11 +21,14 @@ public:
 
 
 signals:
-	void startProgram(QString directory_path);
+	void startProgram(QString gameDirectory, QString saveFile);
 
 private:
-	QPushButton* browse_button;
+	QPushButton* directory_browse_button;
+	QPushButton* savefile_browse_button;
+	QString savefile;
 	QLabel* directory_path_label;
+	QLabel* savefile_path_label;
 	QComboBox* mod_combobox;
 	bool hasValidPath = false;
 	QString chosen_mod = "None";
@@ -40,5 +43,9 @@ private:
 	void clearMods();
 	void saveSettings();
 	void loadSettings();
+
+private:
+	QString getFilename(const QString& path);
+	bool isSavefile(const QString& path);
 };
 

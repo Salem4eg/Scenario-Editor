@@ -7,9 +7,9 @@
 #include <QGraphicsProxyWidget>
 
 #include "MapView.h"
-#include "Province_manager.h"
 #include "ProvinceInfoToolTip.h"
 #include "SidePanel.h"
+#include "MapDataManager.h"
 
 
 class ScenarioEditorWidget : public QWidget
@@ -34,7 +34,7 @@ private:
     MapView* view;
     QGraphicsScene* scene;
     SidePanel* side_panel;
-    Province_manager* province_manager;
+    MapDataManager* data_manager;
 
     QGraphicsPixmapItem* countries_map_item;
     QGraphicsPixmapItem* highlight_map_item;

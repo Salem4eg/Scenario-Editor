@@ -10,14 +10,12 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
 {
     resize(1200, 800);
 
-    QDir dir(gameDirectory);
-    QString provinces_path(dir.filePath("history/provinces"));
 
     auto* main_layout = new QVBoxLayout(this);
 
     scene = new QGraphicsScene(this);
-    view = new MapView(gameDirectory, saveFile, scene, this);
-    province_manager = new Province_manager(provinces_path);
+    view = new MapView(scene, this);
+    data_manager = new MapDataManager(gameDirectory, saveFile, this);
 
     main_layout->addWidget(view);
 
@@ -40,7 +38,7 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
     tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations);
 
 
-	connect(view, &MapView::progressMade, this, &ScenarioEditorWidget::progressMade);
+    connect(data_manager, &MapDataManager::progressMade, this, &ScenarioEditorWidget::progressMade);
 }
 
 
@@ -51,7 +49,7 @@ void ScenarioEditorWidget::prepare()
 {
 	QtConcurrent::run([this]()
     {
-        view->prepare();
+        data_manager->prepare();
 
         set_map();
 
@@ -69,11 +67,16 @@ void ScenarioEditorWidget::prepare()
 
 void ScenarioEditorWidget::set_map()
 {
-    QImage countries_view_map = view->getCountriesViewMap();
-    borders_view_map = view->getBordersViewMap();
+    QImage countries_view_map = data_manager->getCountriesViewMap();
+    QtConcurrent::run([this]()
+    {
+        emit progressMade(5);
+    });
+
+    borders_view_map = data_manager->getBordersViewMap();
     QtConcurrent::run([this]()
         {
-            emit progressMade(45);
+            emit progressMade(40);
         });
 
 
@@ -92,11 +95,11 @@ void ScenarioEditorWidget::set_map()
 
 void ScenarioEditorWidget::make_connections()
 {
-
+	connect(view, &MapView::handleClickAtProvince, data_manager, &MapDataManager::handleClickAtProvince);
     //connect(view, &MapView::isReadyToShow, this, &ScenarioEditorWidget::isReadyToShow);
-    connect(view, &MapView::highlightProvinces, this, &ScenarioEditorWidget::showHighlightedProvinces);
+    connect(data_manager, &MapDataManager::highlightProvinces, this, &ScenarioEditorWidget::showHighlightedProvinces);
 
-    connect(view, &MapView::addProvinceToHighlight, [&](const QList<QPoint>& province_pixels, int provinceID)
+    connect(data_manager, &MapDataManager::addProvinceToHighlight, [&](const QList<QPoint>& province_pixels, int provinceID)
         {
             QImage highlight_layer = highlight_map_item->pixmap().toImage();
 
@@ -111,7 +114,7 @@ void ScenarioEditorWidget::make_connections()
             highlight_map_item->setPixmap(QPixmap::fromImage(highlight_layer));
         });
 
-    connect(view, &MapView::removeProvinceFromHighlight, [&](const QList<QPoint>& province_pixels, int provinceID)
+    connect(data_manager, &MapDataManager::removeProvinceFromHighlight, [&](const QList<QPoint>& province_pixels, int provinceID)
         {
             QImage highlight_layer = highlight_map_item->pixmap().toImage();
 
@@ -124,9 +127,9 @@ void ScenarioEditorWidget::make_connections()
             highlight_map_item->setPixmap(QPixmap::fromImage(highlight_layer));
         });    
 
-    connect(view, &MapView::getChosenProvinceInfo, [=](int provinceID)
+    connect(data_manager, &MapDataManager::getChosenProvinceInfo, [=](int provinceID)
         {
-            ProvinceInfo info = province_manager->getProvinceInfo(provinceID);
+            ProvinceInfo info = data_manager->getProvinceInfo(provinceID);
 
             if (info.name.isEmpty())
                 return;
@@ -154,42 +157,40 @@ void ScenarioEditorWidget::make_connections()
         {
             tooltip->hide();
             showHighlightedProvinces(isEnabled);
-            view->showHighlighting(isEnabled);
-            view->setProvinceChoosingMode(isEnabled);
+            data_manager->showHighlighting(isEnabled);
+            data_manager->setProvinceChoosingMode(isEnabled);
         });
     
     connect(side_panel, &SidePanel::changeProvinceOwner, this, [=]()
         {
-            province_manager->changeProvincesOwner(chosen_provinces, chosen_tag);
+            data_manager->changeProvincesOwner(chosen_provinces, chosen_tag);
 
             paintProvinces();
         });
 
     connect(side_panel, &SidePanel::addCoreToProvinces, this, [=]()
         {
-            province_manager->addCoreToProvinces(chosen_provinces, chosen_tag);
+            data_manager->addCoreToProvinces(chosen_provinces, chosen_tag);
         });
 
     connect(side_panel, &SidePanel::removeCoreFromProvinces, this, [=]()
         {
-            province_manager->removeCoreFromProvinces(chosen_provinces, chosen_tag);
+            data_manager->removeCoreFromProvinces(chosen_provinces, chosen_tag);
         });
 
     connect(side_panel, &SidePanel::clearChosenProvinces, this, [=]()
         {
-            view->clearChosenProvinces();
-            view->showHighlighting(false);
+            data_manager->clearChosenProvinces();
+            data_manager->showHighlighting(false);
         });
 
 }
 
-
-
 void ScenarioEditorWidget::paintProvinces()
 {
-    QRgb country_color = view->GetCountryColor(chosen_tag);
+    QRgb country_color = data_manager->GetCountryColor(chosen_tag);
     QImage countries_map = countries_map_item->pixmap().toImage();
-    auto pixels_to_paint = view->getProvincesPixels(chosen_provinces);
+    auto pixels_to_paint = data_manager->getProvincesPixels(chosen_provinces);
 
     for (auto& pixels_from_province : pixels_to_paint)
     {

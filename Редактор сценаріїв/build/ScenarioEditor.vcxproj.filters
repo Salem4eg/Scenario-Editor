@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\build\ScenarioEditor_autogen\mocs_compilation_Debug.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\main.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\FileReader.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\MapView.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\MapDataManager.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\MapImageProcessor.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ParadoxParser.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ProgressBar.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ProvinceController.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ProvinceBaseManager.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ProvinceSaveManager.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ProvinceInfoToolTip.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\Scenario_editor.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ScenarioEditorWidget.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\ScenarioSetupWidget.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\source\SidePanel.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\build\ScenarioEditor_autogen\mocs_compilation_Release.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\build\ScenarioEditor_autogen\mocs_compilation_MinSizeRel.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\build\ScenarioEditor_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\FileReader.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\MapView.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\MapImageProcessor.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\MapDataManager.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ParadoxParser.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ProgressBar.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ProvinceController.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ProvinceBaseManager.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ProvinceSaveManager.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ProvinceInfoToolTip.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\Scenario_editor.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ScenarioEditorWidget.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\ScenarioSetupWidget.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\SidePanel.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\include\Structures.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Visual_Studio\Мої проєкти\Звичайні проєкти\Редактор сценаріїв\Редактор сценаріїв\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{8E9CDE71-49A4-3660-BB51-BF089F467F9E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{D67D7B0C-2339-385E-B988-6DBA73FF7251}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Generated">
+      <UniqueIdentifier>{50856123-16FE-3F50-B415-1C23373B9A1B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{246F6DEF-E85A-319F-97E2-E9E7A23AA59B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

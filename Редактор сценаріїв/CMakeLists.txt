@@ -16,7 +16,9 @@ set(HEADERS
 	include/MapDataManager.h
 	include/ParadoxParser.h
 	include/ProgressBar.h
-	include/Province_manager.h
+	include/ProvinceController.h
+	include/ProvinceBaseManager.h
+	include/ProvinceSaveManager.h
 	include/ProvinceInfoToolTip.h
 	include/Scenario_editor.h
 	include/ScenarioEditorWidget.h
@@ -33,7 +35,9 @@ set(SOURCES
 	source/MapImageProcessor.cpp
 	source/ParadoxParser.cpp
 	source/ProgressBar.cpp
-	source/Province_manager.cpp
+	source/ProvinceController.cpp
+	source/ProvinceBaseManager.cpp
+	source/ProvinceSaveManager.cpp
 	source/ProvinceInfoToolTip.cpp
 	source/Scenario_editor.cpp
 	source/ScenarioEditorWidget.cpp

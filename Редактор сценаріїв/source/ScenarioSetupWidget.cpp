@@ -75,7 +75,6 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 	right_container_layout->addWidget(mod_combobox, 1, Qt::AlignHCenter);
 	right_container_layout->addWidget(savefile_subtitle_label, 1, Qt::AlignHCenter);
 	right_container_layout->addWidget(savefile_path_label, 1, Qt::AlignHCenter);
-	right_container_layout->addWidget(savefile_browse_button, 1, Qt::AlignHCenter);
 	right_container_layout->addStretch(1);
 
 

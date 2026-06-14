@@ -9,9 +9,9 @@ class FileReader
 {
 public:
 	FileReader();
-	FileReader(const QString& filepath, std::ios_base::openmode open_mode = std::ios_base::out);
+	FileReader(const QString& filepath, std::ios_base::openmode open_mode = std::ios_base::in);
 
-	bool open(const QString& filepath, std::ios_base::openmode open_mode = std::ios_base::out);
+	bool open(const QString& filepath, std::ios_base::openmode open_mode = std::ios_base::in);
 	QString readLine();
 	bool isOpen() const;
 	bool atEnd();

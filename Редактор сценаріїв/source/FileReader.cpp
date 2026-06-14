@@ -1,5 +1,7 @@
 #include "FileReader.h"
 #include <QTextStream>
+#include <QDebug>
+#include <filesystem>
 
 FileReader::FileReader()
 {
@@ -15,7 +17,9 @@ bool FileReader::open(const QString& filepath, std::ios_base::openmode open_mode
 {
 	std::ifstream readFile;
 
-	readFile.open(filepath.toStdString(), open_mode);
+	std::filesystem::path path(filepath.toStdWString());
+
+	readFile.open(path, open_mode);
 	isOpened = readFile.is_open();
 	m_data.clear();
 

@@ -1,8 +1,8 @@
 #include "ProvinceSaveManager.h"
 #include <QRegularExpression>
 
-ProvinceSaveManager::ProvinceSaveManager(QString save_directory, QObject *parent)
-	: QObject(parent), m_save_directory(save_directory)
+ProvinceSaveManager::ProvinceSaveManager(QString save_directory, QString provinces_directory, QObject *parent)
+	: QObject(parent), m_save_directory(save_directory), m_provinces_directory(provinces_directory)
 {}
 
 ProvinceSaveManager::~ProvinceSaveManager()
@@ -23,6 +23,11 @@ void ProvinceSaveManager::removeCoreFromProvinces(QList<int> provinces, QString 
 
 }
 
+ProvinceInfo ProvinceSaveManager::getProvinceInfo(int province)
+{
+	return ProvinceInfo();
+}
+
 void ProvinceSaveManager::loadProvincesFromSavefile(ParadoxGameData& game_data)
 {
 	loadSaveFile();
@@ -31,6 +36,8 @@ void ProvinceSaveManager::loadProvincesFromSavefile(ParadoxGameData& game_data)
 	{
 		loadProvinceInfo(provinceId, lineNumber, game_data);
 	}
+
+	loadChosableProvinces(game_data);
 }
 
 void ProvinceSaveManager::loadSaveFile()
@@ -79,6 +86,7 @@ void ProvinceSaveManager::loadProvinceInfo(int provinceId, int lineNumber, Parad
 
 	int openBraces = 1;
 	int closeBraces = 0;
+	bool hasOwner = false;
 
 	while (openBraces != closeBraces && currentLine < m_savefile.size())
 	{
@@ -89,21 +97,44 @@ void ProvinceSaveManager::loadProvinceInfo(int provinceId, int lineNumber, Parad
 		closeBraces += line.count('}');
 
 		const QRegularExpression ownerRegex("^\\s*owner\\s*=\\s*(\\w+)\\s*$");
-		const QRegularExpression controllerRegex("^\\s*controller\\s*=\\s*(\\w+)\\s*$");
-		const QRegularExpression coreRegex("^\\s*add_core\\s*=\\s*(\\w+)\\s*$");
 
 		auto ownerMatch = ownerRegex.match(line);
-		auto controllerMatch = controllerRegex.match(line);
-		auto coreMatch = coreRegex.match(line);
 
 		if (ownerMatch.hasMatch())
+		{
 			game_data.countries_provinces[ownerMatch.captured(1)].push_back(provinceId);
-		if (controllerMatch.hasMatch())
-			game_data.countries_provinces[controllerMatch.captured(1)].push_back(provinceId);
-		if (coreMatch.hasMatch())
-			game_data.countries_provinces[coreMatch.captured(1)].push_back(provinceId);
+			hasOwner = true;
+			continue;
+		}
 	}
 
+	if (!hasOwner)
+	{
+		game_data.countries_provinces["NO_OWNER"].push_back(provinceId);
+	}
+}
 
+void ProvinceSaveManager::loadChosableProvinces(ParadoxGameData& game_data)
+{
+	QDirIterator it(m_provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 
+	while (it.hasNext())
+	{
+		int provinceID = getProvinceIDFromFilepath(it.next());
+
+		game_data.choosable_provinces.push_back(provinceID);
+	}
+
+}
+
+int ProvinceSaveManager::getProvinceIDFromFilepath(const QString& filepath)
+{
+	auto words = filepath.split("/");
+	QString document = words.last();
+
+	auto items = document.split("-");
+
+	int provinceID = items.first().toInt();
+
+	return provinceID;
 }

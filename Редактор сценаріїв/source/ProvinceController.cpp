@@ -2,7 +2,7 @@
 #include <QDirIterator>
 
 ProvinceController::ProvinceController(QString provinces_directory, QString save_file_path, QObject* parent)
-	: QObject(parent), m_base_manager(provinces_directory, this), m_save_manager(save_file_path, this)
+	: QObject(parent), m_base_manager(provinces_directory, this), m_save_manager(save_file_path, provinces_directory, this)
 {
 	m_use_base_manager = save_file_path.isEmpty();
 }

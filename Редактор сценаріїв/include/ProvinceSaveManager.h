@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QList>
 #include <QHash>
+#include <QDirIterator>
 #include "Structures.h"
 #include "FileReader.h"
 
@@ -13,7 +14,7 @@ class ProvinceSaveManager  : public QObject
 	Q_OBJECT
 
 public:
-	ProvinceSaveManager(QString save_directory, QObject *parent = nullptr);
+	ProvinceSaveManager(QString save_directory, QString provinces_directory, QObject *parent = nullptr);
 	~ProvinceSaveManager();
 
 public slots:
@@ -30,6 +31,7 @@ public slots:
 
 private:
 	QString m_save_directory;
+	QString m_provinces_directory;
 
 	// The savefile loaded into memory
 	QList<QString> m_savefile;
@@ -38,5 +40,8 @@ private:
 
 	void loadSaveFile();
 	void loadProvinceInfo(int provinceId, int lineNumber, ParadoxGameData& game_data);
+	void loadChosableProvinces(ParadoxGameData& game_data);
+
+	int getProvinceIDFromFilepath(const QString& filepath);
 };
 

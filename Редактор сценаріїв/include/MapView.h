@@ -4,42 +4,18 @@
 #include <QGraphicsView>
 #include <QWheelEvent>
 #include <ostream>
-#include <QMutex>
-#include <QTimer>
-#include <atomic>
 
-#include "MapDataManager.h"
 
 class MapView : public QGraphicsView
 {
 	Q_OBJECT
 
 public:
-	MapView(QString directory_path, QString save_file, QGraphicsScene * scene, QWidget *parent = nullptr);
+	MapView(QGraphicsScene * scene, QWidget *parent = nullptr);
 	~MapView();
 
-public slots:
-	void prepare();
-
-	QRgb GetCountryColor(QString tag);
-	QList<QList<QPoint>> getProvincesPixels(QList<int> provinces);
-
-	QImage getBordersViewMap();
-	QImage getCountriesViewMap();
-
-	void setProvinceChoosingMode(bool choose);
-	void showHighlighting(bool show);
-	void clearChosenProvinces();
-
 signals:
-	void isReadyToShow();
-
-	void getChosenProvinceInfo(int provinceID);
-	void highlightProvinces(bool highlight);
-	void addProvinceToHighlight(const QList<QPoint>& province_pixels, int provinceID);
-	void removeProvinceFromHighlight(const QList<QPoint>& province_pixels, int provinceID);
-
-	void progressMade(int progress);
+	void handleClickAtProvince(int x, int y);
 
 protected:
 	void wheelEvent(QWheelEvent* event) override;
@@ -53,15 +29,8 @@ private:
 	QPoint leftButtonStartPos;
 	bool mouseDragMode = false;
 	
-	bool provinces_highlighted = false;
-	QTimer highlight_timer;
-
-	MapDataManager * data_manager;
-
-	bool enable_province_choosing;
+	
 
 
-	void highlightChosenProvinces();
-	void handleClickAtProvince(int x, int y);
 };
 

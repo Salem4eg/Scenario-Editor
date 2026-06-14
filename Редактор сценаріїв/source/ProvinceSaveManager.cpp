@@ -32,9 +32,54 @@ void ProvinceSaveManager::removeCoreFromProvinces(QList<int> provinces, QString 
 	}
 }
 
-ProvinceInfo ProvinceSaveManager::getProvinceInfo(int province)
+ProvinceInfo ProvinceSaveManager::getProvinceInfo(int provinceID)
 {
-	return ProvinceInfo();
+	ProvinceInfo provinceInfo;
+
+	int currentLine = m_province_line_numbers[provinceID];
+
+	moveCurrentLineIntoProvinceBlock(provinceID, currentLine);
+
+	int openBraces = 1;
+	int closeBraces = 0;
+
+	int insertLine = currentLine + 1;
+
+
+	while (openBraces != closeBraces && currentLine < m_savefile.size())
+	{
+		currentLine++;
+
+		QString line = m_savefile[currentLine];
+
+		openBraces += line.count('{');
+		closeBraces += line.count('}');
+
+		const QRegularExpression paradoxRegex("^\\s*(owner|core|name)\\s*=\\s*\"?(\\w+)\"?\\s*$");
+
+		auto match = paradoxRegex.match(line);
+
+		if (match.hasMatch())
+		{
+			QString key = match.captured(1);
+			QString value = match.captured(2);
+
+			if (key == "owner")
+			{
+				provinceInfo.owner = value;
+			}
+			else if (key == "core")
+			{
+				provinceInfo.cores.push_back(value);
+			}
+			else if (key == "name")
+			{
+				provinceInfo.name = value;
+			}
+		}
+	}
+
+	return provinceInfo;
 }
 
 void ProvinceSaveManager::loadProvincesFromSavefile(ParadoxGameData& game_data)
@@ -92,13 +137,13 @@ void ProvinceSaveManager::loadProvinceInfo(int provinceID, int lineNumber, Parad
 		openBraces += line.count('{');
 		closeBraces += line.count('}');
 
-		const QRegularExpression ownerRegex("^\\s*owner\\s*=\\s*(\\w+)\\s*$");
+		const QRegularExpression paradoxRegex("^\\s*(owner)\\s*=\\s*\"?(\\w+)\"?\\s*$");
 
-		auto ownerMatch = ownerRegex.match(line);
+		auto match = paradoxRegex.match(line);
 
-		if (ownerMatch.hasMatch())
+		if (match.hasMatch())
 		{
-			game_data.countries_provinces[ownerMatch.captured(1)].push_back(provinceID);
+			game_data.countries_provinces[match.captured(1)].push_back(provinceID);
 			hasOwner = true;
 			continue;
 		}
@@ -116,7 +161,8 @@ void ProvinceSaveManager::loadChosableProvinces(ParadoxGameData& game_data)
 
 	while (it.hasNext())
 	{
-		int provinceID = getProvinceIDFromFilepath(it.next());
+		QString filepath = it.next();
+		int provinceID = getProvinceIDFromFilepath(filepath);
 
 		game_data.choosable_provinces.push_back(provinceID);
 	}
@@ -155,10 +201,11 @@ void ProvinceSaveManager::changeProvinceOwner(int provinceID, QString country_ta
 		openBraces += line.count('{');
 		closeBraces += line.count('}');
 
-		const QRegularExpression ownerRegex("^\\s*owner\\s*=\\s*(\\w+)\\s*$");
-		auto ownerMatch = ownerRegex.match(line);
+		const QRegularExpression paradoxRegex("^\\s*(owner)\\s*=\\s*\"?(\\w+)\"?\\s*$");
 
-		if (ownerMatch.hasMatch())
+		auto match = paradoxRegex.match(line);
+
+		if (match.hasMatch())
 		{
 			insertLine = currentLine + 1;
 			return;
@@ -190,21 +237,25 @@ void ProvinceSaveManager::addCoreToProvince(int provinceID, QString country_tag)
 		openBraces += line.count('{');
 		closeBraces += line.count('}');
 
-		const QRegularExpression ownerRegex("^\\s*owner\\s*=\\s*(\\w+)\\s*$");
-		auto ownerMatch = ownerRegex.match(line);
+		const QRegularExpression paradoxRegex("^\\s*(owner|core)\\s*=\\s*\"?(\\w+)\"?\\s*$");
 
-		if (ownerMatch.hasMatch())
+		auto match = paradoxRegex.match(line);
+
+		if (match.hasMatch())
 		{
-			insertLine = currentLine + 1;
-			continue;
+			QString key = match.captured(1);
+			QString value = match.captured(2);
+
+			if (key == "owner")
+			{
+				insertLine = currentLine + 1;
+				continue;
+			}
+			else if (key == "core" && value == country_tag)
+			{
+				return; // Core already exists, no need to add
+			}
 		}
-
-		// check if the core already exists with regular expression
-		const QRegularExpression coreRegex("^\\s*core\\s*=\\s*(\\w+)\\s*$");
-		auto coreMatch = coreRegex.match(line);
-
-		if (coreMatch.hasMatch())
-			return;
 	}
 
 	QString lineToAdd = QString("owner=%1").arg(country_tag);
@@ -230,10 +281,10 @@ void ProvinceSaveManager::removeCoreFromProvince(int provinceID, QString country
 		openBraces += line.count('{');
 		closeBraces += line.count('}');
 
-		const QRegularExpression coreRegex("^\\s*core\\s*=\\s*(\\w+)\\s*$");
-		auto coreMatch = coreRegex.match(line);
+		const QRegularExpression paradoxRegex("^\\s*(core)\\s*=\\s*\"?(\\w+)\"?\\s*$");
+		auto match = paradoxRegex.match(line);
 
-		if (coreMatch.hasMatch())
+		if (match.hasMatch())
 		{
 			m_savefile.removeAt(currentLine);
 			updateProvincesLineNumber(currentLine, false);
@@ -276,3 +327,4 @@ void ProvinceSaveManager::updateProvincesLineNumber(int lineNumber, bool newLine
 		}
 	}
 }
+

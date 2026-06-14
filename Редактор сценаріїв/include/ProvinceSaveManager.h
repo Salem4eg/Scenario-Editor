@@ -25,7 +25,7 @@ public slots:
 	// Removes core from provinces if they have it
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag);
 
-	ProvinceInfo getProvinceInfo(int province);
+	ProvinceInfo getProvinceInfo(int provinceID);
 
 	void loadProvincesFromSavefile(ParadoxGameData& game_data);
 
@@ -52,5 +52,7 @@ private:
 	void moveCurrentLineIntoProvinceBlock(int provinceID, int& currentLine);
 	// Update line numbers for provinces after the inserted line
 	void updateProvincesLineNumber(int lineNumber, bool newLineInserted);
+
+
 };
 

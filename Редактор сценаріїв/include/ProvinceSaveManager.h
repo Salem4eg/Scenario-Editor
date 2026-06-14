@@ -14,7 +14,7 @@ class ProvinceSaveManager  : public QObject
 	Q_OBJECT
 
 public:
-	ProvinceSaveManager(QString save_directory, QString provinces_directory, QObject *parent = nullptr);
+	ProvinceSaveManager(QString save_path, QString provinces_directory, QObject *parent = nullptr);
 	~ProvinceSaveManager();
 
 public slots:
@@ -30,7 +30,7 @@ public slots:
 	void loadProvincesFromSavefile(ParadoxGameData& game_data);
 
 private:
-	QString m_save_directory;
+	QString m_save_path;
 	QString m_provinces_directory;
 
 	// The savefile loaded into memory
@@ -53,6 +53,7 @@ private:
 	// Update line numbers for provinces after the inserted line
 	void updateProvincesLineNumber(int lineNumber, bool newLineInserted);
 
+	void saveFile();
 
 };
 

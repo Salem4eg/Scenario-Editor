@@ -1,12 +1,14 @@
 #include "ProvinceSaveManager.h"
 #include <QRegularExpression>
 
-ProvinceSaveManager::ProvinceSaveManager(QString save_directory, QString provinces_directory, QObject *parent)
-	: QObject(parent), m_save_directory(save_directory), m_provinces_directory(provinces_directory)
+ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString provinces_directory, QObject *parent)
+	: QObject(parent), m_save_path(save_path), m_provinces_directory(provinces_directory)
 {}
 
 ProvinceSaveManager::~ProvinceSaveManager()
-{}
+{
+	saveFile();
+}
 
 void ProvinceSaveManager::changeProvincesOwner(QList<int> provinces, QString country_tag)
 {
@@ -96,10 +98,10 @@ void ProvinceSaveManager::loadProvincesFromSavefile(ParadoxGameData& game_data)
 
 void ProvinceSaveManager::loadSaveFile()
 {
-	FileReader reader(m_save_directory);
+	FileReader reader(m_save_path);
 
 	if (!reader.isOpen())
-		throw std::runtime_error("Couldn't open save file: " + m_save_directory.toStdString());
+		throw std::runtime_error("Couldn't open save file: " + m_save_path.toStdString());
 
 	while (!reader.atEnd())
 	{
@@ -328,3 +330,19 @@ void ProvinceSaveManager::updateProvincesLineNumber(int lineNumber, bool newLine
 	}
 }
 
+void ProvinceSaveManager::saveFile()
+{
+	QFile file(m_save_path);
+
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		qDebug() << "Could not open save file for writing: " << m_save_path;
+	}
+
+	QTextStream stream(&file);
+	for (const auto& line : m_savefile)
+	{
+		stream << line << '\n';
+	}
+	file.close();
+}

@@ -3,7 +3,14 @@
 MapDataManager::MapDataManager(QString directory_path, QString save_file_path, QObject* parent)
 	: QObject(parent), m_directory_path(directory_path), m_save_file_path(save_file_path)
 {
+	QDir dir(directory_path);
+	QString provinces_path(dir.filePath("history/provinces"));
+
 	image_processor = new MapImageProcessor(directory_path, this);
+	province_manager = new ProvinceController(provinces_path, save_file_path);
+
+
+	connect(&highlight_timer, &QTimer::timeout, this, &MapDataManager::highlightChosenProvinces);
 }
 
 MapDataManager::~MapDataManager()
@@ -11,7 +18,7 @@ MapDataManager::~MapDataManager()
 
 void MapDataManager::prepare()
 {
-	ParadoxParser parser(m_directory_path, m_save_file_path);
+	ParadoxParser parser(m_save_file_path);
 	ParadoxGameData game_data;
 
 	qDebug() << "loadProvincesDefinition()";
@@ -53,7 +60,7 @@ void MapDataManager::prepare()
 	qDebug() << "loadCountriesProvinces()";
 	startDebugTimer();
 
-	parser.loadCountriesProvinces(game_data);
+	province_manager->loadCountriesProvinces(game_data);
 	QtConcurrent::run([this]()
 	{
 		emit progressMade(5);
@@ -82,7 +89,7 @@ QList<QPoint> MapDataManager::pixelsOfProvince(int provinceID)
 	return image_processor->pixelsOfProvince(provinceID);
 }
 
-QList<QList<QPoint>> MapDataManager::pixelsOfProvinces(QList<int> provinces)
+QList<QList<QPoint>> MapDataManager::getProvincesPixels(QList<int> provinces)
 {
 	QList<QList<QPoint>> result;
 
@@ -92,7 +99,7 @@ QList<QList<QPoint>> MapDataManager::pixelsOfProvinces(QList<int> provinces)
 	return result;
 }
 
-QRgb MapDataManager::colorOfCountry(QString countryTag)
+QRgb MapDataManager::GetCountryColor(QString countryTag)
 {
 	return image_processor->colorOfCountry(countryTag);
 }
@@ -136,6 +143,26 @@ QImage MapDataManager::getCountriesViewMap()
 	return image_processor->GetCountriesViewMap();
 }
 
+void MapDataManager::changeProvincesOwner(QList<int> provinces, QString country_tag)
+{
+	province_manager->changeProvincesOwner(provinces, country_tag);
+}
+
+void MapDataManager::addCoreToProvinces(QList<int> provinces, QString country_tag)
+{
+	province_manager->addCoreToProvinces(provinces, country_tag);
+}
+
+void MapDataManager::removeCoreFromProvinces(QList<int> provinces, QString country_tag)
+{
+	province_manager->removeCoreFromProvinces(provinces, country_tag);
+}
+
+ProvinceInfo MapDataManager::getProvinceInfo(int province)
+{
+	return province_manager->getProvinceInfo(province);
+}
+
 void MapDataManager::startDebugTimer()
 {
 	timer.start();
@@ -148,4 +175,67 @@ void MapDataManager::endDebugTimer()
 	int ms_remaining = time_elapsed % 1000;
 
 	qDebug() << "Time: " << time_elapsed_sec << "s " << ms_remaining << "ms";
+}
+
+void MapDataManager::highlightChosenProvinces()
+{
+	if (!provinces_highlighted)
+	{
+		emit highlightProvinces(true);
+	}
+	else
+	{
+		emit highlightProvinces(false);
+	}
+
+	provinces_highlighted = !provinces_highlighted;
+}
+
+void MapDataManager::handleClickAtProvince(int x, int y)
+{
+	int province = provinceAt(x, y);
+
+	if (province == -1)
+		return;
+
+	if (enable_province_choosing == false)
+	{
+		emit getChosenProvinceInfo(province);
+		return;
+	}
+
+	if (!getChosenProvinces().contains(province))
+		addChosenProvince(province);
+	else
+		removeChosenProvince(province);
+
+	qDebug() << "Province clicked: " << province;
+
+	provinces_highlighted = false;
+	highlightChosenProvinces();
+
+	if (getChosenProvinces().isEmpty())
+		highlight_timer.stop();
+	else
+		highlight_timer.start(1000);
+}
+
+
+
+void MapDataManager::setProvinceChoosingMode(bool choose)
+{
+	enable_province_choosing = choose;
+}
+
+void MapDataManager::showHighlighting(bool show)
+{
+	if (show)
+	{
+		if (!getChosenProvinces().isEmpty())
+		{
+			highlight_timer.start(1000);
+		}
+	}
+	else
+		highlight_timer.stop();
 }

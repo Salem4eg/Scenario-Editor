@@ -39,9 +39,18 @@ private:
 	QHash<int, int> m_province_line_numbers;
 
 	void loadSaveFile();
-	void loadProvinceInfo(int provinceId, int lineNumber, ParadoxGameData& game_data);
+	void loadProvinceInfo(int provinceID, int lineNumber, ParadoxGameData& game_data);
 	void loadChosableProvinces(ParadoxGameData& game_data);
 
 	int getProvinceIDFromFilepath(const QString& filepath);
+
+	void changeProvinceOwner(int provinceID, QString country_tag);
+	void addCoreToProvince(int provinceID, QString country_tag);
+	void removeCoreFromProvince(int provinceID, QString country_tag);
+
+	// If cannot find the province block, throws an exception
+	void moveCurrentLineIntoProvinceBlock(int provinceID, int& currentLine);
+	// Update line numbers for provinces after the inserted line
+	void updateProvincesLineNumber(int lineNumber, bool newLineInserted);
 };
 

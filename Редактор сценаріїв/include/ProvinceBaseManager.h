@@ -1,15 +1,22 @@
 #pragma once
+
+#include <QObject>
 #include <QFile>
 #include <QList>
 #include <QHash>
 #include "Structures.h"
 #include "FileReader.h"
 
-
-class Province_manager
+// Manages province files in the base game directory.
+class ProvinceBaseManager  : public QObject
 {
+	Q_OBJECT
+
+public:
+	ProvinceBaseManager(QString provinces_directory, QObject *parent = nullptr);
+	~ProvinceBaseManager();
+
 public slots:
-	Province_manager(QString provinces_directory);
 	// Changes owner and controller of provinces
 	void changeProvincesOwner(QList<int> provinces, QString country_tag);
 	// Add core to provinces if they don't have it already
@@ -18,10 +25,12 @@ public slots:
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag);
 
 	ProvinceInfo getProvinceInfo(int province);
-	static QString getOwnerFromProvince(const QString& filepath);
+
+	void loadProvincesFromBaseGame(ParadoxGameData& game_data);
 
 private:
-	QHash<int, QString> provinces_filepath;
+	QHash<int, QString> m_provinces_filepath;
+	QString m_provinces_directory;
 
 	void getProvincesFilepath(QString provinces_directory);
 	int getProvinceFromFilepath(QString filepath);
@@ -34,5 +43,9 @@ private:
 	bool openProvinceFile(FileReader& province_file, int province);
 
 	QString getProvinceName(int province);
+
+	void parseProvinceFile(const QString& filepath, ParadoxGameData& game_data);
+	int getProvinceIDFromFilepath(const QString& filepath);
+	QString getOwnerFromProvince(const QString& filepath);
 };
 

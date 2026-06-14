@@ -1,30 +1,34 @@
-#include "Province_manager.h"
+#include "ProvinceBaseManager.h"
 #include <QDirIterator>
 
-Province_manager::Province_manager(QString provinces_directory)
+ProvinceBaseManager::ProvinceBaseManager(QString provinces_directory, QObject *parent)
+	: QObject(parent), m_provinces_directory(provinces_directory)
 {
-	getProvincesFilepath(provinces_directory);
+	getProvincesFilepath(m_provinces_directory);
 }
 
-void Province_manager::changeProvincesOwner(QList<int> provinces, QString country_tag)
+ProvinceBaseManager::~ProvinceBaseManager()
+{}
+
+void ProvinceBaseManager::changeProvincesOwner(QList<int> provinces, QString country_tag)
 {
 	for (int province : provinces)
 		changeProvinceOwner(province, country_tag);
 }
 
-void Province_manager::addCoreToProvinces(QList<int> provinces, QString country_tag)
+void ProvinceBaseManager::addCoreToProvinces(QList<int> provinces, QString country_tag)
 {
 	for (int province : provinces)
 		addCoreToProvince(province, country_tag);
 }
 
-void Province_manager::removeCoreFromProvinces(QList<int> provinces, QString country_tag)
+void ProvinceBaseManager::removeCoreFromProvinces(QList<int> provinces, QString country_tag)
 {
 	for (int province : provinces)
 		removeCoreFromProvince(province, country_tag);
 }
 
-ProvinceInfo Province_manager::getProvinceInfo(int province)
+ProvinceInfo ProvinceBaseManager::getProvinceInfo(int province)
 {
 	FileReader province_file;
 
@@ -71,44 +75,18 @@ ProvinceInfo Province_manager::getProvinceInfo(int province)
 	return info;
 }
 
-QString Province_manager::getOwnerFromProvince(const QString& filepath)
+void ProvinceBaseManager::loadProvincesFromBaseGame(ParadoxGameData& game_data)
 {
-	QString owner = "NO_OWNER";
+	QDirIterator it(m_provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 
-	FileReader province_file(filepath);
-
-	if (!province_file.isOpen())
-		throw std::runtime_error("Couldn't open the file from path: " + filepath.toStdString());
-
-	int depth = 0;
-	while (!province_file.atEnd())
+	while (it.hasNext())
 	{
-		QString line = province_file.readLine();
-
-		int comment_pos = line.indexOf("#");
-
-		if (comment_pos != -1)
-			line = line.left(comment_pos);
-
-		if (line.contains("{"))
-			depth++;
-
-		if (line.contains("owner =") && depth == 0)
-		{
-			owner = line.remove("owner =").trimmed();
-
-			if (owner.size() != 3)
-				qDebug() << "Strange owner: " << owner << " filepath: " << filepath;
-		}
-
-		if (line.contains("}"))
-			depth--;
+		parseProvinceFile(it.next(), game_data);
 	}
-
-	return owner;
 }
 
-void Province_manager::getProvincesFilepath(QString provinces_directory)
+
+void ProvinceBaseManager::getProvincesFilepath(QString provinces_directory)
 {
 	QDirIterator it(provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 
@@ -118,11 +96,11 @@ void Province_manager::getProvincesFilepath(QString provinces_directory)
 
 		int province = getProvinceFromFilepath(filepath);
 
-		provinces_filepath.insert(province, filepath);
+		m_provinces_filepath.insert(province, filepath);
 	}
 }
 
-int Province_manager::getProvinceFromFilepath(QString filepath)
+int ProvinceBaseManager::getProvinceFromFilepath(QString filepath)
 {
 	QString filename = filepath.split('/').last();
 
@@ -131,7 +109,7 @@ int Province_manager::getProvinceFromFilepath(QString filepath)
 	return province;
 }
 
-void Province_manager::changeProvinceOwner(int province, QString country_tag)
+void ProvinceBaseManager::changeProvinceOwner(int province, QString country_tag)
 {
 	FileReader province_file;
 
@@ -168,7 +146,7 @@ void Province_manager::changeProvinceOwner(int province, QString country_tag)
 	writeToFile(province, text);
 }
 
-void Province_manager::addCoreToProvince(int province, QString country_tag)
+void ProvinceBaseManager::addCoreToProvince(int province, QString country_tag)
 {
 	FileReader province_file;
 
@@ -196,13 +174,13 @@ void Province_manager::addCoreToProvince(int province, QString country_tag)
 		if (line.contains("{"))
 			depth++;
 
-		
+
 		if (line.contains(line_to_add) && depth == 0)
 		{
 			has_core = true;
 			break;
 		}
-		
+
 		if ((line.contains("owner") || line.contains("controller")) && depth == 0)
 			insert_line_index = text.size() + 1;
 
@@ -221,7 +199,7 @@ void Province_manager::addCoreToProvince(int province, QString country_tag)
 	writeToFile(province, text);
 }
 
-void Province_manager::removeCoreFromProvince(int province, QString country_tag)
+void ProvinceBaseManager::removeCoreFromProvince(int province, QString country_tag)
 {
 	FileReader province_file;
 
@@ -236,7 +214,7 @@ void Province_manager::removeCoreFromProvince(int province, QString country_tag)
 	while (!province_file.atEnd())
 	{
 		QString line = province_file.readLine();
-		
+
 		QString code_part;
 		QString commented_part;
 
@@ -272,10 +250,10 @@ void Province_manager::removeCoreFromProvince(int province, QString country_tag)
 	writeToFile(province, text);
 }
 
-void Province_manager::writeToFile(int province, QStringList& text)
+void ProvinceBaseManager::writeToFile(int province, QStringList& text)
 {
-	QString filepath = provinces_filepath.value(province);
-	
+	QString filepath = m_provinces_filepath.value(province);
+
 	QFile province_file(filepath);
 	province_file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate);
 
@@ -285,9 +263,9 @@ void Province_manager::writeToFile(int province, QStringList& text)
 		write << line << "\n";
 }
 
-bool Province_manager::openProvinceFile(FileReader& province_file, int province)
+bool ProvinceBaseManager::openProvinceFile(FileReader& province_file, int province)
 {
-	QString filepath = provinces_filepath.value(province, "");
+	QString filepath = m_provinces_filepath.value(province, "");
 
 	if (filepath.isEmpty())
 	{
@@ -304,12 +282,76 @@ bool Province_manager::openProvinceFile(FileReader& province_file, int province)
 	return true;
 }
 
-QString Province_manager::getProvinceName(int province)
+QString ProvinceBaseManager::getProvinceName(int province)
 {
-	QString filepath = provinces_filepath[province];
+	QString filepath = m_provinces_filepath[province];
 
 	QFileInfo info(filepath);
 
 	return info.baseName().split("-").last().trimmed();
 }
 
+void ProvinceBaseManager::parseProvinceFile(const QString& filepath, ParadoxGameData& game_data)
+{
+	FileReader reader(filepath);
+
+	if (!reader.isOpen())
+		throw std::runtime_error("Couldn't open province file: " + filepath.toStdString());
+
+	int provinceID = getProvinceIDFromFilepath(filepath);
+
+	QString province_owner = getOwnerFromProvince(filepath);
+
+	// choosable_provinces to distinguish sea provinces that aren't clickable
+	game_data.choosable_provinces.push_back(provinceID);
+	game_data.countries_provinces[province_owner].push_back(provinceID);
+}
+
+int ProvinceBaseManager::getProvinceIDFromFilepath(const QString& filepath)
+{
+	auto words = filepath.split("/");
+	QString document = words.last();
+
+	auto items = document.split("-");
+
+	int provinceID = items.first().toInt();
+
+	return provinceID;
+}
+
+QString ProvinceBaseManager::getOwnerFromProvince(const QString& filepath)
+{
+	QString owner = "NO_OWNER";
+
+	FileReader province_file(filepath);
+
+	if (!province_file.isOpen())
+		throw std::runtime_error("Couldn't open the file from path: " + filepath.toStdString());
+
+	int depth = 0;
+	while (!province_file.atEnd())
+	{
+		QString line = province_file.readLine();
+
+		int comment_pos = line.indexOf("#");
+
+		if (comment_pos != -1)
+			line = line.left(comment_pos);
+
+		if (line.contains("{"))
+			depth++;
+
+		if (line.contains("owner =") && depth == 0)
+		{
+			owner = line.remove("owner =").trimmed();
+
+			if (owner.size() != 3)
+				qDebug() << "Strange owner: " << owner << " filepath: " << filepath;
+		}
+
+		if (line.contains("}"))
+			depth--;
+	}
+
+	return owner;
+}

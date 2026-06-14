@@ -1,11 +1,9 @@
 #include "ParadoxParser.h"
 
-ParadoxParser::ParadoxParser(QString directory, QString save_file, QObject *parent)
+ParadoxParser::ParadoxParser(QString directory, QObject *parent)
 	: QObject(parent)
 {
 	directory_path = directory;
-	save_file_path = save_file;
-	save_file_exists = save_file_path.isEmpty() ? false : true;
 	QDir dir(directory);
 
 	provinces_definition = dir.filePath("map/definition.csv");
@@ -156,106 +154,4 @@ void ParadoxParser::extractCountriesColors(QList<QPair<QString, QString>>& count
 	game_data.countries_color.insert("NO_OWNER", qRgb(50, 50, 50));
 }
 
-void ParadoxParser::loadCountriesProvinces(ParadoxGameData& game_data)
-{
-	if (!save_file_exists)
-	{
-		QDirIterator it(provinces_directory_path, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 
-		while (it.hasNext())
-		{
-			parseProvinceFile(it.next(), game_data);
-		}
-	}
-	else
-	{
-		loadProvincesFromSavefile(game_data);
-	}
-}
-
-void ParadoxParser::parseProvinceFile(const QString& filepath, ParadoxGameData& game_data)
-{
-	FileReader reader(filepath);
-
-	if (!reader.isOpen())
-		throw std::runtime_error("Couldn't open province file: " + filepath.toStdString());
-
-	int provinceID = getProvinceIDFromFilepath(filepath);
-
-	QString province_owner = Province_manager::getOwnerFromProvince(filepath);
-
-	// choosable_provinces для уникання морських провінцій
-	game_data.choosable_provinces.push_back(provinceID);
-	game_data.countries_provinces[province_owner].push_back(provinceID);
-}
-
-int ParadoxParser::getProvinceIDFromFilepath(const QString& filepath)
-{
-	auto words = filepath.split("/");
-	QString document = words.last();
-
-	auto items = document.split("-");
-
-	int provinceID = items.first().toInt();
-
-	return provinceID;
-}
-
-void ParadoxParser::loadProvincesFromSavefile(ParadoxGameData& game_data)
-{
-	FileReader reader(save_file_path);
-
-	if (!reader.isOpen())
-		throw std::runtime_error("Couldn't open save file: " + save_file_path.toStdString());
-
-	static const QRegularExpression provKeyRegex("^(\\d+)=\\s*$");
-
-	int currentProvinceId = -1;
-	int braceDepth = 0;
-	bool insideProvince = false;
-
-	while (!reader.atEnd()) 
-	{
-		QString line = reader.readLine().trimmed();
-		if (line.isEmpty()) continue;
-
-		int opens = line.count('{');
-		int closes = line.count('}');
-
-		if (!insideProvince && braceDepth == 0) 
-		{
-			auto match = provKeyRegex.match(line);
-			if (match.hasMatch()) 
-			{
-				currentProvinceId = match.captured(1).toInt();
-				insideProvince = true;
-				braceDepth += opens - closes;
-				continue;
-			}
-		}
-		else if (insideProvince) 
-		{
-			if (line.startsWith("owner=")) 
-			{
-				QString owner = line.section('"', 1, 1);
-
-				game_data.choosable_provinces.push_back(currentProvinceId);
-				game_data.countries_provinces[owner].push_back(currentProvinceId);
-
-			}
-
-			braceDepth += opens - closes;
-
-			if (braceDepth <= 0) 
-			{
-				insideProvince = false;
-				braceDepth = 0;
-				currentProvinceId = -1;
-			}
-		}
-		else 
-		{
-			braceDepth += opens - closes;
-		}
-	}
-}

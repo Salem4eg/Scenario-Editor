@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(ScenarioEditor)
 
+set(CMAKE_PREFIX_PATH "E:/Qt/6.9.0/msvc2022_64")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -16,7 +17,9 @@ set(HEADERS
 	include/MapDataManager.h
 	include/ParadoxParser.h
 	include/ProgressBar.h
-	include/Province_manager.h
+	include/ProvinceController.h
+	include/ProvinceBaseManager.h
+	include/ProvinceSaveManager.h
 	include/ProvinceInfoToolTip.h
 	include/Scenario_editor.h
 	include/ScenarioEditorWidget.h
@@ -33,7 +36,9 @@ set(SOURCES
 	source/MapImageProcessor.cpp
 	source/ParadoxParser.cpp
 	source/ProgressBar.cpp
-	source/Province_manager.cpp
+	source/ProvinceController.cpp
+	source/ProvinceBaseManager.cpp
+	source/ProvinceSaveManager.cpp
 	source/ProvinceInfoToolTip.cpp
 	source/Scenario_editor.cpp
 	source/ScenarioEditorWidget.cpp

@@ -1,9 +1,13 @@
 #include "ProvinceBaseManager.h"
 #include <QDirIterator>
 
-ProvinceBaseManager::ProvinceBaseManager(QString provinces_directory, QObject *parent)
-	: QObject(parent), m_provinces_directory(provinces_directory)
+ProvinceBaseManager::ProvinceBaseManager(QString game_directory, QObject *parent)
+	: QObject(parent), ProvinceManager(parent)
 {
+	QDir dir(game_directory);
+	QString provinces_path(dir.filePath("history/provinces"));
+	m_provinces_directory = provinces_path;
+
 	getProvincesFilepath(m_provinces_directory);
 }
 
@@ -75,7 +79,7 @@ ProvinceInfo ProvinceBaseManager::getProvinceInfo(int province)
 	return info;
 }
 
-void ProvinceBaseManager::loadProvincesFromBaseGame(ParadoxGameData& game_data)
+void ProvinceBaseManager::loadProvinces(ParadoxGameData& game_data)
 {
 	QDirIterator it(m_provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 

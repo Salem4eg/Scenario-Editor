@@ -1,9 +1,14 @@
 #include "ProvinceSaveManager.h"
 #include <QRegularExpression>
 
-ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString provinces_directory, QObject *parent)
-	: QObject(parent), m_save_path(save_path), m_provinces_directory(provinces_directory)
-{}
+ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directory, QObject *parent)
+	: QObject(parent), ProvinceManager(parent), m_save_path(save_path)
+{
+	QDir dir(game_directory);
+	QString provinces_path(dir.filePath("history/provinces"));
+	m_provinces_directory = provinces_path;
+	m_default_map = dir.filePath("map/default.map");
+}
 
 ProvinceSaveManager::~ProvinceSaveManager()
 {
@@ -57,7 +62,7 @@ ProvinceInfo ProvinceSaveManager::getProvinceInfo(int provinceID)
 		openBraces += line.count('{');
 		closeBraces += line.count('}');
 
-		const QRegularExpression paradoxRegex("^\\s*(owner|core|name)\\s*=\\s*\"?(\\w+)\"?\\s*$");
+		const QRegularExpression paradoxRegex("^\\s*(owner|core|name)\\s*=\\s*\"([^\"]*)\"\\s*$");
 
 		auto match = paradoxRegex.match(line);
 
@@ -84,7 +89,7 @@ ProvinceInfo ProvinceSaveManager::getProvinceInfo(int provinceID)
 	return provinceInfo;
 }
 
-void ProvinceSaveManager::loadProvincesFromSavefile(ParadoxGameData& game_data)
+void ProvinceSaveManager::loadProvinces(ParadoxGameData& game_data)
 {
 	loadSaveFile();
 
@@ -98,6 +103,7 @@ void ProvinceSaveManager::loadProvincesFromSavefile(ParadoxGameData& game_data)
 
 void ProvinceSaveManager::loadSaveFile()
 {
+	loadMaxProvinces();
 	FileReader reader(m_save_path);
 
 	if (!reader.isOpen())
@@ -113,8 +119,11 @@ void ProvinceSaveManager::loadSaveFile()
 
 		if (match.hasMatch())
 		{
-			int provinceId = match.captured(1).toInt();
-			m_province_line_numbers[provinceId] = m_savefile.size();
+			if (m_province_line_numbers.size() < m_max_provinces)
+			{
+				int provinceId = match.captured(1).toInt();
+				m_province_line_numbers[provinceId] = m_savefile.size();
+			}
 		}
 
 		m_savefile.push_back(line);
@@ -145,7 +154,7 @@ void ProvinceSaveManager::loadProvinceInfo(int provinceID, int lineNumber, Parad
 
 		if (match.hasMatch())
 		{
-			game_data.countries_provinces[match.captured(1)].push_back(provinceID);
+			game_data.countries_provinces[match.captured(2)].push_back(provinceID);
 			hasOwner = true;
 			continue;
 		}
@@ -345,4 +354,22 @@ void ProvinceSaveManager::saveFile()
 		stream << line << '\n';
 	}
 	file.close();
+}
+
+void ProvinceSaveManager::loadMaxProvinces()
+{
+	FileReader reader(m_default_map);
+
+	QRegularExpression maxProvincesRegex("^max_provinces\\s*=\\s*(\\d+)\\s*$");
+
+	while (!reader.atEnd())
+	{
+		QString line = reader.readLine();
+		auto match = maxProvincesRegex.match(line.trimmed());
+		if (match.hasMatch())
+		{
+			m_max_provinces = match.captured(1).toInt();
+			return;
+		}
+	}
 }

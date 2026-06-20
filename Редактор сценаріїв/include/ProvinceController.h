@@ -7,6 +7,7 @@
 #include "FileReader.h"
 #include "ProvinceBaseManager.h"
 #include "ProvinceSaveManager.h"
+#include "ProvinceManager.h"
 
 class ProvinceController : public QObject
 {
@@ -27,9 +28,6 @@ public slots:
 	void loadCountriesProvinces(ParadoxGameData& game_data);
 
 private:
-	ProvinceBaseManager m_base_manager;
-	ProvinceSaveManager m_save_manager;
-
-	bool m_use_base_manager;
+	ProvinceManager* manager;
 };
 

@@ -6,27 +6,28 @@
 #include <QHash>
 #include "Structures.h"
 #include "FileReader.h"
+#include "ProvinceManager.h"
 
 // Manages province files in the base game directory.
-class ProvinceBaseManager  : public QObject
+class ProvinceBaseManager : public QObject, public ProvinceManager
 {
 	Q_OBJECT
 
 public:
-	ProvinceBaseManager(QString provinces_directory, QObject *parent = nullptr);
+	ProvinceBaseManager(QString game_directory, QObject *parent = nullptr);
 	~ProvinceBaseManager();
 
 public slots:
 	// Changes owner and controller of provinces
-	void changeProvincesOwner(QList<int> provinces, QString country_tag);
+	void changeProvincesOwner(QList<int> provinces, QString country_tag) override;
 	// Add core to provinces if they don't have it already
-	void addCoreToProvinces(QList<int> provinces, QString country_tag);
+	void addCoreToProvinces(QList<int> provinces, QString country_tag) override;
 	// Removes core from provinces if they have it
-	void removeCoreFromProvinces(QList<int> provinces, QString country_tag);
+	void removeCoreFromProvinces(QList<int> provinces, QString country_tag) override;
 
-	ProvinceInfo getProvinceInfo(int province);
+	ProvinceInfo getProvinceInfo(int province) override;
 
-	void loadProvincesFromBaseGame(ParadoxGameData& game_data);
+	void loadProvinces(ParadoxGameData& game_data) override;
 
 private:
 	QHash<int, QString> m_provinces_filepath;

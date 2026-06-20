@@ -75,7 +75,7 @@ private:
 	bool provinces_highlighted = false;
 	QTimer highlight_timer;
 
-	bool enable_province_choosing;
+	bool enable_province_choosing = false;
 
 	// DEBUG FUNCTIONS
 	QElapsedTimer timer;

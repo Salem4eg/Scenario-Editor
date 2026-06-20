@@ -3,11 +3,9 @@
 MapDataManager::MapDataManager(QString directory_path, QString save_file_path, QObject* parent)
 	: QObject(parent), m_directory_path(directory_path), m_save_file_path(save_file_path)
 {
-	QDir dir(directory_path);
-	QString provinces_path(dir.filePath("history/provinces"));
 
 	image_processor = new MapImageProcessor(directory_path, this);
-	province_manager = new ProvinceController(provinces_path, save_file_path);
+	province_manager = new ProvinceController(directory_path, save_file_path);
 
 
 	connect(&highlight_timer, &QTimer::timeout, this, &MapDataManager::highlightChosenProvinces);
@@ -18,7 +16,7 @@ MapDataManager::~MapDataManager()
 
 void MapDataManager::prepare()
 {
-	ParadoxParser parser(m_save_file_path);
+	ParadoxParser parser(m_directory_path);
 	ParadoxGameData game_data;
 
 	qDebug() << "loadProvincesDefinition()";
@@ -78,8 +76,12 @@ int MapDataManager::provinceAt(int x, int y)
 {
 	int province = image_processor->provinceAt(x, y);
 
+	qDebug() << "Province clicked: " << province;
+
 	if (!choosable_provinces.contains(province))
 		return -1;
+
+	qDebug() << province << " is choosable";
 
 	return province;
 }

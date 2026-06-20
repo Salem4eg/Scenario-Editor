@@ -18,6 +18,7 @@ set(HEADERS
 	include/ParadoxParser.h
 	include/ProgressBar.h
 	include/ProvinceController.h
+	include/ProvinceManager.h
 	include/ProvinceBaseManager.h
 	include/ProvinceSaveManager.h
 	include/ProvinceInfoToolTip.h
@@ -37,6 +38,7 @@ set(SOURCES
 	source/ParadoxParser.cpp
 	source/ProgressBar.cpp
 	source/ProvinceController.cpp
+	include/ProvinceManager.cpp
 	source/ProvinceBaseManager.cpp
 	source/ProvinceSaveManager.cpp
 	source/ProvinceInfoToolTip.cpp

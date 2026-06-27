@@ -9,7 +9,7 @@
 #include "ProvinceManager.h"
 
 // Manages province files in the base game directory.
-class ProvinceBaseManager : public QObject, public ProvinceManager
+class ProvinceBaseManager : public ProvinceManager
 {
 	Q_OBJECT
 

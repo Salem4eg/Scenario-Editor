@@ -10,7 +10,7 @@
 #include "ProvinceManager.h"
 
 // Manages provinces in a save file
-class ProvinceSaveManager  : public QObject, public ProvinceManager
+class ProvinceSaveManager  : public ProvinceManager
 {
 	Q_OBJECT
 
@@ -34,7 +34,6 @@ private:
 	QString m_save_path;
 	QString m_provinces_directory;
 	QString m_default_map;
-	int m_max_provinces;
 
 	// The savefile loaded into memory
 	QList<QString> m_savefile;
@@ -57,8 +56,10 @@ private:
 	void updateProvincesLineNumber(int lineNumber, bool newLineInserted);
 
 	void saveFile();
-
-	void loadMaxProvinces();
-
+	// Reads and saves lines until province occurs, returns first province 
+	QString parseHeader(FileReader& reader);
+	void parseProvincesBlock(FileReader& reader, QString& province_line);
+	void parseFooter(FileReader& reader);
+	void consumeBlock(FileReader& reader, QString& province_line);
 };
 

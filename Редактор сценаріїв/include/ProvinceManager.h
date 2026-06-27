@@ -8,7 +8,6 @@ class ProvinceManager  : public QObject
 	Q_OBJECT
 
 public:
-	ProvinceManager(QObject *parent);
 	virtual ~ProvinceManager() = default;
 
 public slots:

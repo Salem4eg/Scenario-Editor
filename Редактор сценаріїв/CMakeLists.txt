@@ -38,7 +38,6 @@ set(SOURCES
 	source/ParadoxParser.cpp
 	source/ProgressBar.cpp
 	source/ProvinceController.cpp
-	include/ProvinceManager.cpp
 	source/ProvinceBaseManager.cpp
 	source/ProvinceSaveManager.cpp
 	source/ProvinceInfoToolTip.cpp
@@ -53,7 +52,7 @@ source_group("Header files" FILES ${HEADERS})
 
 
 
-qt_add_executable(ScenarioEditor
+qt_add_executable(ScenarioEditor WIN32
 	${SOURCES}
 	${HEADERS}
 )

@@ -3,6 +3,7 @@
 #include <QString>
 #include <QList>
 #include <fstream>
+#include <QStringDecoder>
 
 // QFile can't normally read text files with Macintosh(CR) format, need to use this instead.
 class FileReader

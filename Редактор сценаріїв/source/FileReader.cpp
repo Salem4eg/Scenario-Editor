@@ -16,7 +16,6 @@ FileReader::FileReader(const QString& filepath, std::ios_base::openmode open_mod
 bool FileReader::open(const QString& filepath, std::ios_base::openmode open_mode)
 {
 	std::ifstream readFile;
-
 	std::filesystem::path path(filepath.toStdWString());
 
 	readFile.open(path, open_mode);
@@ -25,8 +24,13 @@ bool FileReader::open(const QString& filepath, std::ios_base::openmode open_mode
 
 	if (isOpened)
 	{
-		std::string file_data = std::string(std::istreambuf_iterator<char>(readFile), std::istreambuf_iterator<char>());
-		processData(QString::fromStdString(file_data));
+		std::string file_data((std::istreambuf_iterator<char>(readFile)),
+			std::istreambuf_iterator<char>());
+
+		auto decoder = QStringDecoder(QStringDecoder::Latin1);
+		QString data = decoder(QByteArrayView(file_data.data(), file_data.size()));
+
+		processData(data);
 	}
 
 	return isOpened;

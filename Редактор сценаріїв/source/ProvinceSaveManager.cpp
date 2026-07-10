@@ -58,7 +58,7 @@ void ProvinceSaveManager::loadProvinces(ParadoxGameData& game_data)
 
 	loadSaveFile();
 
-	for (int provinceID : m_provinces.keys())
+	for (int provinceID : game_data.choosable_provinces)
 	{
 		loadProvinceInfo(provinceID, game_data);
 	}

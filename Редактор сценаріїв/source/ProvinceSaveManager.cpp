@@ -1,8 +1,9 @@
 #include "ProvinceSaveManager.h"
 #include <QRegularExpression>
+#include "SaveGameStreamScanner.h"
 
 ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directory, QObject *parent)
-	: m_save_path(save_path)
+	: m_save_path(save_path), ProvinceManager(parent)
 {
 	QDir dir(game_directory);
 	QString provinces_path(dir.filePath("history/provinces"));
@@ -12,6 +13,7 @@ ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directo
 
 ProvinceSaveManager::~ProvinceSaveManager()
 {
+	qDebug() << "~ProvinceSaveManager()";
 	saveFile();
 }
 
@@ -40,120 +42,62 @@ void ProvinceSaveManager::removeCoreFromProvinces(QList<int> provinces, QString 
 }
 
 ProvinceInfo ProvinceSaveManager::getProvinceInfo(int provinceID)
-{
-	const QRegularExpression paradoxRegex("^\\s*(owner|core|name)\\s*=\\s*\"?([^\"]+)\"?\\s*$");
-	
+{	
 	ProvinceInfo provinceInfo;
 
-	int currentLine = m_province_line_numbers[provinceID];
-
-	moveCurrentLineIntoProvinceBlock(provinceID, currentLine);
-
-	int openBraces = 1;
-	int closeBraces = 0;
-
-	int insertLine = currentLine + 1;
-
-
-	while (openBraces != closeBraces && currentLine < m_savefile.size())
-	{
-		currentLine++;
-
-		QString line = m_savefile[currentLine];
-
-		openBraces += line.count('{');
-		closeBraces += line.count('}');
-
-
-		auto match = paradoxRegex.match(line);
-
-		if (match.hasMatch())
-		{
-			QString key = match.captured(1);
-			QString value = match.captured(2);
-
-			if (key == "owner")
-			{
-				provinceInfo.owner = value;
-			}
-			else if (key == "core")
-			{
-				provinceInfo.cores.push_back(value);
-			}
-			else if (key == "name")
-			{
-				provinceInfo.name = value;
-			}
-		}
-	}
-
-	// temporary check
-	provinceInfo.name.replace(QChar(0xFFFD), QString("?"));
+	provinceInfo.name = m_provinces[provinceID].name;
+	provinceInfo.owner = m_provinces[provinceID].owner;
+	provinceInfo.cores = m_provinces[provinceID].cores;
 
 	return provinceInfo;
 }
 
 void ProvinceSaveManager::loadProvinces(ParadoxGameData& game_data)
 {
+	loadChosableProvinces(game_data);
+
 	loadSaveFile();
 
-	for (auto [provinceId, lineNumber] : m_province_line_numbers.asKeyValueRange())
+	for (int provinceID : m_provinces.keys())
 	{
-		loadProvinceInfo(provinceId, lineNumber, game_data);
+		loadProvinceInfo(provinceID, game_data);
 	}
 
-	loadChosableProvinces(game_data);
 }
 
 void ProvinceSaveManager::loadSaveFile()
 {
-	FileReader reader(m_save_path);
+	QFile file(m_save_path);
 
-	if (!reader.isOpen())
-		throw std::runtime_error("Couldn't open save file: " + m_save_path.toStdString());
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		qWarning() << "Failed to open save file:" << m_save_path;
+		return;
+	}
 
-	// save lines and find provinces block
-	// save lines and save province lines numbers
-	// save lines without any checking
-	QString line = parseHeader(reader);
-	parseProvincesBlock(reader, line);
-	parseFooter(reader);
+	auto memoryData = file.map(0, file.size());
+
+	SaveGameStreamScanner scanner(memoryData, file.size());
+	int firstProvinceId = parseHeader(&scanner);
+
+	if (firstProvinceId == -1) 
+	{
+		file.unmap(memoryData);
+		return;
+	}
+
+	parseProvincesBlock(&scanner, firstProvinceId);
+
+
+	file.unmap(memoryData);
 }
 
-void ProvinceSaveManager::loadProvinceInfo(int provinceID, int lineNumber, ParadoxGameData& game_data)
+void ProvinceSaveManager::loadProvinceInfo(int provinceID, ParadoxGameData& game_data)
 {
-	int currentLine = lineNumber;
-
-	moveCurrentLineIntoProvinceBlock(provinceID, currentLine);
-
-	int openBraces = 1;
-	int closeBraces = 0;
-	bool hasOwner = false;
-
-	while (openBraces != closeBraces && currentLine < m_savefile.size())
-	{
-		currentLine++;
-		QString line = m_savefile[currentLine];
-
-		openBraces += line.count('{');
-		closeBraces += line.count('}');
-
-		const QRegularExpression ownerRegex("^\\s*(owner)\\s*=\\s*\"?(\\w+)\"?\\s*$");
-
-		auto match = ownerRegex.match(line);
-
-		if (match.hasMatch())
-		{
-			game_data.countries_provinces[match.captured(2)].push_back(provinceID);
-			hasOwner = true;
-			continue;
-		}
-	}
-
-	if (!hasOwner)
-	{
+	if (m_provinces[provinceID].owner.isEmpty())
 		game_data.countries_provinces["NO_OWNER"].push_back(provinceID);
-	}
+	else
+		game_data.countries_provinces[m_provinces[provinceID].owner].push_back(provinceID);
 }
 
 void ProvinceSaveManager::loadChosableProvinces(ParadoxGameData& game_data)
@@ -167,7 +111,6 @@ void ProvinceSaveManager::loadChosableProvinces(ParadoxGameData& game_data)
 
 		game_data.choosable_provinces.push_back(provinceID);
 	}
-
 }
 
 int ProvinceSaveManager::getProvinceIDFromFilepath(const QString& filepath)
@@ -184,268 +127,270 @@ int ProvinceSaveManager::getProvinceIDFromFilepath(const QString& filepath)
 
 void ProvinceSaveManager::changeProvinceOwner(int provinceID, QString country_tag)
 {
-	const QRegularExpression ownerRegex("^\\s*(owner)\\s*=\\s*\"?(\\w+)\"?\\s*$");
-	int currentLine = m_province_line_numbers[provinceID];
-
-	moveCurrentLineIntoProvinceBlock(provinceID, currentLine);
-
-	int openBraces = 1;
-	int closeBraces = 0;
-
-	// If no owner found, adding owner line at the start of the province block
-	int insertLine = currentLine + 1;
-
-	while (openBraces != closeBraces && currentLine < m_savefile.size())
-	{
-		currentLine++;
-
-		QString line = m_savefile[currentLine];
-
-		openBraces += line.count('{');
-		closeBraces += line.count('}');
-
-		// If province has owner to change
-		auto match = ownerRegex.match(line);
-		if (match.hasMatch())
-		{
-			if (match.captured(2) != country_tag)
-				m_savefile[currentLine] = QString("\towner=\"%1\"").arg(country_tag);
-			return;
-		}
-	}
-
-	m_savefile.insert(insertLine, QString("\towner=\"%1\"").arg(country_tag));
-	updateProvincesLineNumber(insertLine, true);
+	m_provinces[provinceID].isModified = true;
+	m_provinces[provinceID].owner = country_tag;
+	m_provinces[provinceID].controller = country_tag;
 }
 
 void ProvinceSaveManager::addCoreToProvince(int provinceID, QString country_tag)
 {
-	int currentLine = m_province_line_numbers[provinceID];
-
-	moveCurrentLineIntoProvinceBlock(provinceID, currentLine);
-
-	int openBraces = 1;
-	int closeBraces = 0;
-
-	int insertLine = currentLine + 1;
-
-	while (openBraces != closeBraces && currentLine < m_savefile.size())
-	{
-		currentLine++;
-
-		QString line = m_savefile[currentLine];
-
-		openBraces += line.count('{');
-		closeBraces += line.count('}');
-
-		const QRegularExpression paradoxRegex("^\\s*(owner|core)\\s*=\\s*\"?(\\w+)\"?\\s*$");
-
-		auto match = paradoxRegex.match(line);
-
-		if (match.hasMatch())
-		{
-			QString key = match.captured(1);
-			QString value = match.captured(2);
-
-			if (key == "owner")
-			{
-				insertLine = currentLine + 1;
-				continue;
-			}
-			else if (key == "core" && value == country_tag)
-			{
-				return; // Core already exists, no need to add
-			}
-		}
-	}
-
-	QString lineToAdd = QString("\tcore=\"%1\"").arg(country_tag);
-	m_savefile.insert(insertLine, lineToAdd);
-	updateProvincesLineNumber(insertLine, true);
+	m_provinces[provinceID].isModified = true;
+	m_provinces[provinceID].cores.push_back(country_tag);
 }
 
 void ProvinceSaveManager::removeCoreFromProvince(int provinceID, QString country_tag)
 {
-	const QRegularExpression coreRegex("^\\s*(core)\\s*=\\s*\"?(\\w+)\"?\\s*$");
-	int currentLine = m_province_line_numbers[provinceID];
-
-	moveCurrentLineIntoProvinceBlock(provinceID, currentLine);
-
-	int openBraces = 1;
-	int closeBraces = 0;
-
-	while (openBraces != closeBraces && currentLine < m_savefile.size())
-	{
-		currentLine++;
-
-		QString line = m_savefile[currentLine];
-
-		openBraces += line.count('{');
-		closeBraces += line.count('}');
-
-		
-		auto match = coreRegex.match(line);
-
-		if (match.hasMatch() && match.captured(2) == country_tag)
-		{
-			m_savefile.removeAt(currentLine);
-			updateProvincesLineNumber(currentLine, false);
-			return;
-		}
-	}
-}
-
-void ProvinceSaveManager::moveCurrentLineIntoProvinceBlock(int provinceID, int& currentLine)
-{
-	const QRegularExpression provKeyRegex("^(\\d+)=\\s*$");
-
-	auto match = provKeyRegex.match(m_savefile[currentLine].trimmed());
-
-	if (!match.hasMatch() || match.captured(1).toInt() != provinceID)
-		throw std::runtime_error(std::format("Expected province {} at line {}", provinceID, currentLine));
-
-	bool inProvinceBlock = m_savefile[currentLine].contains('{');
-
-	while (!inProvinceBlock && currentLine < m_savefile.size())
-	{
-		currentLine++;
-		inProvinceBlock = m_savefile[currentLine].contains('{');
-	}
-
-	if (!inProvinceBlock)
-		throw std::runtime_error(std::format("Could not find province block for province {} at line {}", provinceID, currentLine));
-}
-
-void ProvinceSaveManager::updateProvincesLineNumber(int lineNumber, bool newLineInserted)
-{
-	for (auto [provinceID, provinceLineNumber] : m_province_line_numbers.asKeyValueRange())
-	{
-		if (provinceLineNumber > lineNumber)
-		{
-			if (newLineInserted)
-				m_province_line_numbers[provinceID]++;
-			else
-				m_province_line_numbers[provinceID]--;
-		}
-	}
+	m_provinces[provinceID].isModified = true;
+	m_provinces[provinceID].cores.removeAll(country_tag);
 }
 
 void ProvinceSaveManager::saveFile()
 {
 	QFile file(m_save_path);
 
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::ReadOnly))
 	{
-		qDebug() << "Could not open save file for writing: " << m_save_path;
+		qWarning() << "Failed to open save file for reading:" << m_save_path;
+		return;
 	}
 
-	QTextStream stream(&file);
-	for (const auto& line : m_savefile)
-	{
-		stream << line << '\n';
-	}
-	file.close();
-}
+	char* mappedData = reinterpret_cast<char*>(file.map(0, file.size()));
 
-QString ProvinceSaveManager::parseHeader(FileReader& reader)
-{
-	const QRegularExpression provKeyRegex("^(\\d{1,4})=\\s*\\{?\\s*$");
+	QSaveFile saveFile(m_save_path);
+	if (!saveFile.open(QIODevice::WriteOnly))
+	{
+		qWarning() << "Failed to open save file for writing:" << m_save_path;
+		file.unmap(reinterpret_cast<uchar *>(mappedData));
+		return;
+	}
+
+	QList<Province> modifiedProvinces;
+	for (const Province& province : m_provinces)
+	{
+		if (province.isModified)
+		{
+			modifiedProvinces.append(province);
+		}
+	}
+
+	std::sort(modifiedProvinces.begin(), modifiedProvinces.end(), [](const Province& a, const Province& b)
+	{
+		return a.startOffSet < b.startOffSet;
+	});
+
+	qint64 currentPosition = 0;
+
+	for (const Province& province : modifiedProvinces)
+	{
+		qint64 bytesToCopy = province.startOffSet - currentPosition;
+
+		if (bytesToCopy != 0)
+		{
+			saveFile.write(mappedData + currentPosition, bytesToCopy);
+		}
+
+		QByteArray modifiedProvinceData = serializeProvince(province);
+		saveFile.write(modifiedProvinceData);
+
+		currentPosition = province.endOffSet;
+	}
 	
-	while (!reader.atEnd())
+	if (currentPosition < file.size())
 	{
-		QString line = reader.readLine();
-		
-		// Check if it is province block, if yes quit
-		auto match = provKeyRegex.match(line.trimmed());
-
-		if (match.hasMatch())
-			return line;
-		
-		m_savefile.push_back(line);
-
-		// Do not check with regex while it is in { block }
-		if (line.contains("{"))
-		{
-			consumeBlock(reader, line);
-		}
+		qint64 bytesToCopy = file.size() - currentPosition;
+		saveFile.write(mappedData + currentPosition, bytesToCopy);
 	}
 
-	return QString();
+	file.unmap(reinterpret_cast<uchar *>(mappedData));
+	file.close();
+	bool isSaved = saveFile.commit();
+
+	if (!isSaved)
+	{
+		qWarning() << "Failed to save modified provinces to save file:" << m_save_path << " reason: " << saveFile.errorString();
+	}
 }
 
-void ProvinceSaveManager::parseProvincesBlock(FileReader& reader, QString& province_line)
+int ProvinceSaveManager::parseHeader(SaveGameStreamScanner* scanner)
 {
-	const QRegularExpression provKeyRegex("^(\\d{1,4})=\\s*\\{?\\s*$");
-	const QRegularExpression countryKeyRegex("^[A-Z0-9]{3}=\\s*$");
-	auto match = provKeyRegex.match(province_line.trimmed());
+	int firstProvinceId = -1;
+	TokenType token;
+	QString value;
+	int depth = 0; // Depth counter to track nested blocks
 
-	if (match.hasMatch())
+	while ((token = scanner->nextToken(value)) != TokenType::EndOfFile) 
 	{
-		int provinceId = match.captured(1).toInt();
-		m_province_line_numbers[provinceId] = m_savefile.size();
-	}
-
-	m_savefile.push_back(province_line);
-
-	while (!reader.atEnd())
-	{
-		QString line = reader.readLine();
-
-		auto match = provKeyRegex.match(line.trimmed());
-
-		if (match.hasMatch())
+		if (token == TokenType::OpenBrace) 
 		{
-			int provinceId = match.captured(1).toInt();
-			m_province_line_numbers[provinceId] = m_savefile.size();
-
-			m_savefile.push_back(line);
-			
-			if (line.contains("{"))
-				consumeBlock(reader, line);
-
-			continue;
-		}
-
-		// Watch for TAG= format, it indicates end of provinces
-		auto tagMatch = countryKeyRegex.match(line.trimmed());
-		if (tagMatch.hasMatch())
+			depth++;
+		} 
+		else if (token == TokenType::CloseBrace) 
 		{
-			m_savefile.push_back(line);
-			return;
-		}
-
-		if (line.contains("{"))
+			depth--;
+		} 
+		else if (token == TokenType::Identifier && depth == 0)
 		{
-			m_savefile.push_back(line);
-			consumeBlock(reader, line);
+			bool isInt = false;
+			int id = value.toInt(&isInt);
+			if (isInt)
+			{
+				if (scanner->nextToken(value) == TokenType::Equals &&
+					scanner->nextToken(value) == TokenType::OpenBrace)
+				{
+					firstProvinceId = id;
+					break;
+				}
+			}
 		}
 	}
 
+	return firstProvinceId;
 }
 
-void ProvinceSaveManager::parseFooter(FileReader& reader)
+void ProvinceSaveManager::parseProvincesBlock(SaveGameStreamScanner * scanner, int firstProvinceId)
 {
-	while (!reader.atEnd())
+	int currentProvinceId = firstProvinceId;
+	TokenType token;
+	QString value;
+	int depth = 0;
+
+	// Parse the first province block
+	Province province;
+	province.id = currentProvinceId;
+	province.startOffSet = scanner->currentOffset();
+
+	parseProvinceBlock(scanner, province);
+
+	province.endOffSet = scanner->currentOffset();
+
+	m_provinces.insert(province.id, province);
+
+
+	// Parse the remaining province blocks
+	while ((token = scanner->nextToken(value)) != TokenType::EndOfFile) 
 	{
-		m_savefile.push_back(reader.readLine());
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+		}
+		else if (token == TokenType::Identifier && depth == 0)
+		{
+			bool isInt = false;
+			currentProvinceId = value.toInt(&isInt);
+			bool isBlockStart = (scanner->nextToken(value) == TokenType::Equals &&
+				scanner->nextToken(value) == TokenType::OpenBrace);
+
+			// Province block found
+			if (isInt && isBlockStart)
+			{
+				Province province;
+				province.id = currentProvinceId;
+				province.startOffSet = scanner->currentOffset();
+
+				parseProvinceBlock(scanner, province);
+
+				province.endOffSet = scanner->currentOffset();
+
+				m_provinces.insert(province.id, province);
+			}
+
+			// Check if it is the end of the provinces block (next country TAG)
+			if (!isInt || !isBlockStart)
+			{
+				break;
+			}
+		}
 	}
 }
 
-void ProvinceSaveManager::consumeBlock(FileReader& reader, QString& province_line)
+void ProvinceSaveManager::parseProvinceBlock(SaveGameStreamScanner* scanner, Province& province)
 {
-	// just save lines until end of a block
-	int leftBrackets = province_line.count("{");
-	int rightBrackets = province_line.count("}");
+	int depth = 1;
+	TokenType token;
+	QString value;
 
-	while (leftBrackets > rightBrackets)
+	qint64 lastReadPosition = scanner->currentOffset();
+
+	while (depth > 0 && (token = scanner->nextToken(value)) != TokenType::EndOfFile)
 	{
-		QString line = reader.readLine();
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+		}
+		else if (depth == 1 && token == TokenType::Identifier)
+		{
+			bool isTargetFields = (value == "owner") || (value == "controller") || (value == "name") || (value == "core");
 
+			if (!isTargetFields)
+				continue;
 
-		leftBrackets += line.count("{");
-		rightBrackets += line.count("}");
+			qint64 beforeTokenPos = scanner->currentOffset() - value.length();
+			if (beforeTokenPos > lastReadPosition)
+			{
+				QString text = scanner->getTextBetween(lastReadPosition, beforeTokenPos);
+				if (!text.trimmed().isEmpty())
+					province.rawLines.append(text);
+			}
 
-		m_savefile.push_back(line);
+			QString identifier = value;
+			token = scanner->nextToken(value); // Expecting '='
+			token = scanner->nextToken(value); // Expecting a tag
+
+			QString cleanValue = value;
+
+			if (identifier == "owner") province.owner = cleanValue;
+			else if (identifier == "controller") province.controller = cleanValue;
+			else if (identifier == "name") province.name = cleanValue;
+			else if (identifier == "core") province.cores.push_back(cleanValue);
+
+			lastReadPosition = scanner->currentOffset();
+		}
+	}
+
+	if (scanner->currentOffset() > lastReadPosition)
+	{
+		QString text = scanner->getTextBetween(lastReadPosition, scanner->currentOffset());
+		if (!text.trimmed().isEmpty())
+			province.rawLines.append(text);
 	}
 }
 
+QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
+{
+	QByteArray buffer;
+
+	QTextStream stream(&buffer, QIODevice::WriteOnly);
+
+	//stream << province.id << " = {\n";
+
+	stream << "\n\tname=\"" << province.name.toUtf8() << "\"\n";
+
+	if (!province.owner.isEmpty())
+		stream << "\towner=\"" << province.owner.toUtf8() << "\"\n";
+
+	if (!province.controller.isEmpty())
+		stream << "\tcontroller=\"" << province.controller.toUtf8() << "\"";
+
+	if (!province.cores.isEmpty())
+	{
+		for (const QString& core : province.cores)
+		{
+			stream << "\n\tcore=\"" << core.toUtf8() << "\"";
+		}
+	}
+
+	for (const QString& line : province.rawLines)
+	{
+		stream << line << "\n";
+	}
+
+	return buffer;
+}

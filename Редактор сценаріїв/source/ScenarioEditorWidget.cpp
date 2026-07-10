@@ -67,17 +67,27 @@ void ScenarioEditorWidget::prepare()
 
 void ScenarioEditorWidget::set_map()
 {
+    qDebug() << "getCountriesViewMap()";
+    startDebugTimer();
+
     QImage countries_view_map = data_manager->getCountriesViewMap();
     QtConcurrent::run([this]()
     {
         emit progressMade(5);
     });
 
+    endDebugTimer();
+
+    qDebug() << "getBordersViewMap()";
+    startDebugTimer();
+
     borders_view_map = data_manager->getBordersViewMap();
     QtConcurrent::run([this]()
         {
             emit progressMade(40);
         });
+
+    endDebugTimer();
 
 
     QImage highlight_layer = QImage(countries_view_map.size(), QImage::Format_ARGB32);
@@ -86,11 +96,16 @@ void ScenarioEditorWidget::set_map()
     countries_map_item = scene->addPixmap(QPixmap::fromImage(countries_view_map));
     highlight_map_item = scene->addPixmap(QPixmap::fromImage(highlight_layer));
 
+    qDebug() << "PaintBordersOverCountriesViewMap()";
+    startDebugTimer();
+
     PaintBordersOverCountriesViewMap();
     QtConcurrent::run([this]()
         {
             emit progressMade(5);
         });
+
+    endDebugTimer();
 }
 
 void ScenarioEditorWidget::make_connections()
@@ -228,5 +243,19 @@ void ScenarioEditorWidget::PaintBordersOverCountriesViewMap()
     painter.end();
 
     countries_map_item->setPixmap(QPixmap::fromImage(countries_view_map));
+}
+
+void ScenarioEditorWidget::startDebugTimer()
+{
+    timer.start();
+}
+
+void ScenarioEditorWidget::endDebugTimer()
+{
+    auto time_elapsed = timer.elapsed();
+    int time_elapsed_sec = time_elapsed / 1000;
+    int ms_remaining = time_elapsed % 1000;
+
+    qDebug() << "Time: " << time_elapsed_sec << "s " << ms_remaining << "ms";
 }
 

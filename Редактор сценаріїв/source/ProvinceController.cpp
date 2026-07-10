@@ -12,7 +12,7 @@ ProvinceController::ProvinceController(QString game_directory, QString save_file
 
 ProvinceController::~ProvinceController()
 {
-
+	qDebug() << "~ProvinceController()";
 }
 
 void ProvinceController::changeProvincesOwner(QList<int> provinces, QString country_tag)

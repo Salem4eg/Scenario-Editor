@@ -22,6 +22,7 @@ set(HEADERS
 	include/ProvinceBaseManager.h
 	include/ProvinceSaveManager.h
 	include/ProvinceInfoToolTip.h
+	include/SaveGameStreamScanner.h
 	include/Scenario_editor.h
 	include/ScenarioEditorWidget.h
 	include/ScenarioSetupWidget.h

@@ -1,7 +1,7 @@
 #include "ProvinceBaseManager.h"
 #include <QDirIterator>
 
-ProvinceBaseManager::ProvinceBaseManager(QString game_directory, QObject *parent)
+ProvinceBaseManager::ProvinceBaseManager(QString game_directory, QObject *parent): ProvinceManager(parent)
 {
 	QDir dir(game_directory);
 	QString provinces_path(dir.filePath("history/provinces"));

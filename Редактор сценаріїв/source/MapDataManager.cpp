@@ -5,14 +5,16 @@ MapDataManager::MapDataManager(QString directory_path, QString save_file_path, Q
 {
 
 	image_processor = new MapImageProcessor(directory_path, this);
-	province_manager = new ProvinceController(directory_path, save_file_path);
+	province_manager = new ProvinceController(directory_path, save_file_path, this);
 
 
 	connect(&highlight_timer, &QTimer::timeout, this, &MapDataManager::highlightChosenProvinces);
 }
 
 MapDataManager::~MapDataManager()
-{}
+{
+	qDebug() << "~MapDataManager()";
+}
 
 void MapDataManager::prepare()
 {

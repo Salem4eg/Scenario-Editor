@@ -5,9 +5,11 @@
 #include <QList>
 #include <QHash>
 #include <QDirIterator>
+#include <QSaveFile>
 #include "Structures.h"
 #include "FileReader.h"
 #include "ProvinceManager.h"
+#include "SaveGameStreamScanner.h"
 
 // Manages provinces in a save file
 class ProvinceSaveManager  : public ProvinceManager
@@ -35,13 +37,10 @@ private:
 	QString m_provinces_directory;
 	QString m_default_map;
 
-	// The savefile loaded into memory
-	QList<QString> m_savefile;
-	// Maps province id to line number in savefile
-	QHash<int, int> m_province_line_numbers;
+	QMap<int, Province> m_provinces;
 
 	void loadSaveFile();
-	void loadProvinceInfo(int provinceID, int lineNumber, ParadoxGameData& game_data);
+	void loadProvinceInfo(int provinceID, ParadoxGameData& game_data);
 	void loadChosableProvinces(ParadoxGameData& game_data);
 
 	int getProvinceIDFromFilepath(const QString& filepath);
@@ -50,16 +49,13 @@ private:
 	void addCoreToProvince(int provinceID, QString country_tag);
 	void removeCoreFromProvince(int provinceID, QString country_tag);
 
-	// If cannot find the province block, throws an exception
-	void moveCurrentLineIntoProvinceBlock(int provinceID, int& currentLine);
-	// Update line numbers for provinces after the inserted line
-	void updateProvincesLineNumber(int lineNumber, bool newLineInserted);
-
 	void saveFile();
-	// Reads and saves lines until province occurs, returns first province 
-	QString parseHeader(FileReader& reader);
-	void parseProvincesBlock(FileReader& reader, QString& province_line);
-	void parseFooter(FileReader& reader);
-	void consumeBlock(FileReader& reader, QString& province_line);
+	// Reads until province occurs, returns first province line position
+	int parseHeader(SaveGameStreamScanner * scanner);
+	void parseProvincesBlock(SaveGameStreamScanner * scanner, int firstProvinceId);
+	void parseProvinceBlock(SaveGameStreamScanner* scanner, Province& province);
+
+	QByteArray serializeProvince(const Province& province);
+	
 };
 

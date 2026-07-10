@@ -53,5 +53,12 @@ private:
     void showHighlightedProvinces(bool show);
 
     void PaintBordersOverCountriesViewMap();
+
+
+
+    // DEBUG FUNCTIONS
+    QElapsedTimer timer;
+    void startDebugTimer();
+    void endDebugTimer();
 };
 

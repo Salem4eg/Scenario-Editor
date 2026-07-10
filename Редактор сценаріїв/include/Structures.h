@@ -19,3 +19,29 @@ struct ParadoxGameData
 	// Non-sea provinces, because they cannot be changed and they have no information.
 	QList<int> choosable_provinces;
 };
+
+struct Province
+{
+	int id;
+	QString owner;
+	QString controller;
+	QStringList cores;
+	QString name;
+
+	QStringList rawLines;
+	bool isModified = false;
+
+	qint64 startOffSet = 0;
+	qint64 endOffSet = 0;
+};
+
+// Types of tokens we encounter in the save file
+enum class TokenType
+{
+	Identifier,  // Province name, country tag, key (id, owner)
+	OpenBrace,   // {
+	CloseBrace,  // }
+	Equals,      // =
+	Comment,     // # ...
+	EndOfFile
+};

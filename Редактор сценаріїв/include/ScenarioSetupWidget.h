@@ -31,6 +31,7 @@ private:
 	QLabel* savefile_path_label;
 	QComboBox* mod_combobox;
 	bool hasValidPath = false;
+	bool isLoading = false;
 	QString chosen_mod = "None";
 	ProgressBar* progress_bar;
 

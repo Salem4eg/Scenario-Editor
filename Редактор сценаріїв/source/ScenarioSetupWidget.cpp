@@ -230,6 +230,9 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 	connect(directory_browse_button, &QPushButton::pressed, this, [=]()
 		{
+			if (isLoading)
+				return;
+
 			QString filepath = QFileDialog::getExistingDirectory();
 			hasValidPath = false;
 			clearMods();
@@ -245,6 +248,9 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 	connect(savefile_browse_button, &QPushButton::pressed, this, [=]()
 		{
+			if (isLoading)
+				return;
+
 			savefile.clear();
 			
 			QString filepath = QFileDialog::getOpenFileName(this, "Select save file", "", "Save files (*.v2)");
@@ -273,6 +279,9 @@ ScenarioSetupWidget::ScenarioSetupWidget(QWidget* parent)
 
 				if (chosen_mod != "None" && !chosen_mod.isEmpty())
 					directoryPath += "/mod/" + chosen_mod;
+
+				isLoading = true;
+				mod_combobox->setEnabled(false);
 
 				emit startProgram(directoryPath, savefile);
 			}

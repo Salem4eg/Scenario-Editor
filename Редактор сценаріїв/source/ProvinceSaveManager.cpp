@@ -14,7 +14,7 @@ ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directo
 ProvinceSaveManager::~ProvinceSaveManager()
 {
 	qDebug() << "~ProvinceSaveManager()";
-	saveFile();
+	//saveFile();
 }
 
 void ProvinceSaveManager::changeProvincesOwner(QList<int> provinces, QString country_tag)
@@ -344,12 +344,15 @@ void ProvinceSaveManager::parseProvinceBlock(SaveGameStreamScanner* scanner, Pro
 			token = scanner->nextToken(value); // Expecting '='
 			token = scanner->nextToken(value); // Expecting a tag
 
-			QString cleanValue = value;
 
-			if (identifier == "owner") province.owner = cleanValue;
-			else if (identifier == "controller") province.controller = cleanValue;
-			else if (identifier == "name") province.name = cleanValue;
-			else if (identifier == "core") province.cores.push_back(cleanValue);
+			if (identifier == "owner") 
+				province.owner = value;
+			else if (identifier == "controller") 
+				province.controller = value;
+			else if (identifier == "name") 
+				province.name = value;
+			else if (identifier == "core") 
+				province.cores.push_back(value);
 
 			lastReadPosition = scanner->currentOffset();
 		}

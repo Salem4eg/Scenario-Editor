@@ -63,7 +63,7 @@ public:
                 while (m_pos < m_size && m_data[m_pos] != '"') 
                     m_pos++;
                 
-                outValue = QString::fromUtf8(m_data + start, m_pos - start);
+                outValue = QString::fromLatin1(m_data + start, m_pos - start);
 
                 if (m_pos < m_size) 
                 {
@@ -83,7 +83,7 @@ public:
                 m_pos++;
             }
 
-            outValue = QString::fromUtf8(m_data + start, m_pos - start);
+            outValue = QString::fromLatin1(m_data + start, m_pos - start);
 
             return TokenType::Identifier;
         }
@@ -111,7 +111,7 @@ public:
 		if (start < 0 || end > m_size || start >= end)
 			return QString();
 
-		return QString::fromUtf8(m_data + start, end - start);
+		return QString::fromLatin1(m_data + start, end - start);
 	}
 
 	qint64 currentOffset() const

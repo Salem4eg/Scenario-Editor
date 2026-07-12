@@ -63,7 +63,8 @@ public:
                 while (m_pos < m_size && m_data[m_pos] != '"') 
                     m_pos++;
                 
-                outValue = QString::fromLatin1(m_data + start, m_pos - start);
+                QStringDecoder decoder(QStringDecoder::Latin1);
+                outValue = decoder.decode(QByteArrayView(m_data + start, m_pos - start));
 
                 if (m_pos < m_size) 
                 {

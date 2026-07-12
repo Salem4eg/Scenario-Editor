@@ -345,6 +345,8 @@ void SidePanel::showButtonsForChangingProvinces(bool show)
         add_core->show();
         remove_core->show();
         chosen_country->show();
+
+        setFixedSize(200, 350);
     }
     else
     {
@@ -354,5 +356,7 @@ void SidePanel::showButtonsForChangingProvinces(bool show)
         add_core->hide();
         remove_core->hide();
         chosen_country->hide();
+
+        setFixedSize(200, 60);
     }
 }

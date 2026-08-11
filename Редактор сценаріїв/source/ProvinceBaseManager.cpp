@@ -4,8 +4,9 @@
 ProvinceBaseManager::ProvinceBaseManager(QString game_directory, QObject *parent): ProvinceManager(parent)
 {
 	QDir dir(game_directory);
-	QString provinces_path(dir.filePath("history/provinces"));
-	m_provinces_directory = provinces_path;
+	
+	m_provinces_directory = dir.filePath("history/provinces");
+	m_pops_directory = dir.filePath("history/pops/1836.1.1");
 
 	getProvincesFilepath(m_provinces_directory);
 }
@@ -31,14 +32,14 @@ void ProvinceBaseManager::removeCoreFromProvinces(QList<int> provinces, QString 
 		removeCoreFromProvince(province, country_tag);
 }
 
-ProvinceInfo ProvinceBaseManager::getProvinceInfo(int province)
+Province ProvinceBaseManager::getProvinceInfo(int province)
 {
 	FileReader province_file;
 
 	if (!openProvinceFile(province_file, province))
 		return {};
 
-	ProvinceInfo info;
+	Province info;
 
 	int depth = 0;
 	while (!province_file.atEnd())
@@ -80,12 +81,29 @@ ProvinceInfo ProvinceBaseManager::getProvinceInfo(int province)
 
 void ProvinceBaseManager::loadProvinces(ParadoxGameData& game_data)
 {
-	QDirIterator it(m_provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
+	QDirIterator provinces_it(m_provinces_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
 
-	while (it.hasNext())
+	while (provinces_it.hasNext())
 	{
-		parseProvinceFile(it.next(), game_data);
+		parseProvinceFile(provinces_it.next(), game_data);
 	}
+
+	QDirIterator pops_it(m_pops_directory, { "*.txt" }, QDir::Files, QDirIterator::Subdirectories);
+
+	while (pops_it.hasNext())
+	{
+		parsePopFiles(pops_it.next());
+	}
+}
+
+void ProvinceBaseManager::setTypes(const QStringList& popTypes)
+{
+	m_popTypes = popTypes;
+}
+
+void ProvinceBaseManager::setProvincePopData(int provinceID, const QList<PopData>& population)
+{
+	m_provinces[provinceID].population = population;
 }
 
 
@@ -357,4 +375,80 @@ QString ProvinceBaseManager::getOwnerFromProvince(const QString& filepath)
 	}
 
 	return owner;
+}
+
+void ProvinceBaseManager::parsePopFiles(QString country_filepath)
+{
+	QFile country_file(country_filepath);
+
+	if (!country_file.open(QFile::ReadOnly | QFile::Text))
+	{
+		qDebug() << "Couldn't open the file: " << country_filepath;
+		return;
+	}
+
+	uchar* mapped_data = country_file.map(0, country_file.size());
+
+	FileStreamScanner scanner(mapped_data, country_file.size());
+	TokenType token;
+	int depth = 0;
+	QString value;
+
+	while ((token = scanner.nextToken(value)) != TokenType::EndOfFile)
+	{
+		if (token == TokenType::Identifier && depth == 0)
+		{
+			int provinceId = value.toInt();
+
+			scanner.nextToken(value); // =
+			scanner.nextToken(value); // {
+
+			depth++;
+			
+			while ((token = scanner.nextToken(value)) != TokenType::CloseBrace)
+			{
+				PopData pop = parsePopInProvince(scanner, token, value, provinceId, depth);
+				m_provinces[provinceId].population.append(pop);
+			}
+		}
+		else if (token == TokenType::OpenBrace)
+			depth++;
+		else if (token == TokenType::CloseBrace)
+			depth--;
+	}
+
+	country_file.unmap(mapped_data);
+}
+
+PopData ProvinceBaseManager::parsePopInProvince(FileStreamScanner& scanner, TokenType token, QString& value, int provinceID, int& depth)
+{
+	PopData pop;
+
+	if (token != TokenType::Identifier)
+		throw std::runtime_error("Couldn't parse pop in province: " + QString::number(provinceID).toStdString());
+
+	pop.type = value;
+
+	scanner.nextToken(value); // =
+	scanner.nextToken(value); // {
+
+	while ((token = scanner.nextToken(value)) != TokenType::CloseBrace)
+	{
+		if (token == TokenType::Identifier)
+		{
+			QString parameter = value;
+
+			scanner.nextToken(value); // =
+			scanner.nextToken(value); // parameter value
+
+			if (parameter == "culture")
+				pop.culture = value;
+			else if (parameter == "religion")
+				pop.religion = value;
+			else if (parameter == "size")
+				pop.size = value.toInt();
+		}
+	}
+
+	return pop;
 }

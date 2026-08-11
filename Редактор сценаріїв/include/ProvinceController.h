@@ -23,9 +23,11 @@ public slots:
 	// Removes core from provinces if they have it
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag);
 
-	ProvinceInfo getProvinceInfo(int province);
+	Province getProvinceInfo(int province);
 
 	void loadCountriesProvinces(ParadoxGameData& game_data);
+
+	void setProvincePopData(int provinceID, const QList<PopData>& population);
 
 private:
 	ProvinceManager* manager;

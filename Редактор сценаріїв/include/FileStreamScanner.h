@@ -6,7 +6,7 @@
 #include "Structures.h"
 
 
-class SaveGameStreamScanner 
+class FileStreamScanner 
 {
 private:
     const char* m_data; 
@@ -14,7 +14,7 @@ private:
     qint64 m_pos;       
 
 public:
-    SaveGameStreamScanner(const uchar* mappedData, qint64 size)
+    FileStreamScanner(const uchar* mappedData, qint64 size)
         : m_data(reinterpret_cast<const char*>(mappedData)), m_size(size), m_pos(0)
     {}
 

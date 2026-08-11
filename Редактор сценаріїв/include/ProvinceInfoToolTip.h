@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QGraphicsEffect>
 #include "Structures.h"
+#include "ProvincePopulationDialog.h"
 
 class ProvinceInfoToolTip : public QWidget
 {
@@ -15,11 +16,13 @@ public:
 	~ProvinceInfoToolTip();
 
 public slots:
-	void setInfo(const ProvinceInfo& info);
+	void setInfo(const Province& info);
+	Province getInfo() const;
 	
 signals:
 	void hideToolTip();
 	void showProvinceDetails();
+	void hasChanges();
 
 protected:
 	void mousePressEvent(QMouseEvent* event) override;
@@ -30,5 +33,7 @@ private:
 	QLabel* m_name;
 	QLabel* m_owner;
 	QLabel* m_cores;
+	Province m_provinceInfo;
+	ProvincePopulationDialog* m_populationDialog;
 };
 

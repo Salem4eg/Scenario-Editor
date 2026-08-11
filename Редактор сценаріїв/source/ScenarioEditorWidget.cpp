@@ -39,6 +39,12 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
 
 
     connect(data_manager, &MapDataManager::progressMade, this, &ScenarioEditorWidget::progressMade);
+	connect(province_tooltip, &ProvinceInfoToolTip::hasChanges, this, [=]()
+	{
+        auto province_info = province_tooltip->getInfo();
+
+		data_manager->setProvincePopData(province_info.id, province_info.population);
+	});
 }
 
 
@@ -144,7 +150,7 @@ void ScenarioEditorWidget::make_connections()
 
     connect(data_manager, &MapDataManager::getChosenProvinceInfo, [=](int provinceID)
         {
-            ProvinceInfo info = data_manager->getProvinceInfo(provinceID);
+            Province info = data_manager->getProvinceInfo(provinceID);
 
             if (info.name.isEmpty())
                 return;

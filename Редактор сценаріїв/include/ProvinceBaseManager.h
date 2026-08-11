@@ -4,8 +4,10 @@
 #include <QFile>
 #include <QList>
 #include <QHash>
+#include <QMap>
 #include "Structures.h"
 #include "FileReader.h"
+#include "FileStreamScanner.h"
 #include "ProvinceManager.h"
 
 // Manages province files in the base game directory.
@@ -25,13 +27,21 @@ public slots:
 	// Removes core from provinces if they have it
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag) override;
 
-	ProvinceInfo getProvinceInfo(int province) override;
+	Province getProvinceInfo(int province) override;
 
+	//loadProvinces() requires to use setTypes() beforehand in order to load population from provinces 
 	void loadProvinces(ParadoxGameData& game_data) override;
+
+	void setTypes(const QStringList& popTypes) override;
+	void setProvincePopData(int provinceID, const QList<PopData>& population) override;
 
 private:
 	QHash<int, QString> m_provinces_filepath;
 	QString m_provinces_directory;
+	QString m_pops_directory;
+
+	QStringList m_popTypes;
+	QMap<int, Province> m_provinces;
 
 	void getProvincesFilepath(QString provinces_directory);
 	int getProvinceFromFilepath(QString filepath);
@@ -48,5 +58,8 @@ private:
 	void parseProvinceFile(const QString& filepath, ParadoxGameData& game_data);
 	int getProvinceIDFromFilepath(const QString& filepath);
 	QString getOwnerFromProvince(const QString& filepath);
+
+	void parsePopFiles(QString country_filepath);
+	PopData parsePopInProvince(FileStreamScanner& scanner, TokenType token, QString& value, int provinceID, int& depth);
 };
 

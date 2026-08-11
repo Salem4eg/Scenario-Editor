@@ -9,7 +9,7 @@
 #include "Structures.h"
 #include "FileReader.h"
 #include "ProvinceManager.h"
-#include "SaveGameStreamScanner.h"
+#include "FileStreamScanner.h"
 
 // Manages provinces in a save file
 class ProvinceSaveManager  : public ProvinceManager
@@ -28,9 +28,13 @@ public slots:
 	// Removes core from provinces if they have it
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag) override;
 
-	ProvinceInfo getProvinceInfo(int provinceID) override;
+	Province getProvinceInfo(int provinceID) override;
 
+	//loadProvinces() requires to use setTypes() beforehand in order to load population from provinces 
 	void loadProvinces(ParadoxGameData& game_data) override;
+	void setTypes(const QStringList& popTypes) override;
+
+	void setProvincePopData(int provinceID, const QList<PopData>& population) override;
 
 private:
 	QString m_save_path;
@@ -38,6 +42,8 @@ private:
 	QString m_default_map;
 
 	QMap<int, Province> m_provinces;
+
+	QStringList m_popTypes;
 
 	void loadSaveFile();
 	void loadProvinceInfo(int provinceID, ParadoxGameData& game_data);
@@ -51,9 +57,10 @@ private:
 
 	void saveFile();
 	// Reads until province occurs, returns first province line position
-	int parseHeader(SaveGameStreamScanner * scanner);
-	void parseProvincesBlock(SaveGameStreamScanner * scanner, int firstProvinceId);
-	void parseProvinceBlock(SaveGameStreamScanner* scanner, Province& province);
+	int parseHeader(FileStreamScanner* scanner);
+	void parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId);
+	void parseProvinceBlock(FileStreamScanner* scanner, Province& province);
+	void parsePopInProvinceBlock(FileStreamScanner* scanner, Province& province, const QString& popType);
 
 	QByteArray serializeProvince(const Province& province);
 	

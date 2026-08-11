@@ -30,7 +30,7 @@ void ProvinceController::removeCoreFromProvinces(QList<int> provinces, QString c
 	manager->removeCoreFromProvinces(provinces, country_tag);
 }
 
-ProvinceInfo ProvinceController::getProvinceInfo(int province)
+Province ProvinceController::getProvinceInfo(int province)
 {
 	return manager->getProvinceInfo(province);
 }
@@ -38,5 +38,10 @@ ProvinceInfo ProvinceController::getProvinceInfo(int province)
 void ProvinceController::loadCountriesProvinces(ParadoxGameData& game_data)
 {
 	manager->loadProvinces(game_data);
+}
+
+void ProvinceController::setProvincePopData(int provinceID, const QList<PopData>& population)
+{
+	manager->setProvincePopData(provinceID, population);
 }
 

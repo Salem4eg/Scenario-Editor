@@ -48,8 +48,7 @@ void FileReader::processMappedData(const char* memory_ptr, qint64 file_size)
 {
 	if (file_size == 0) return;
 
-	// Орієнтовно резервуємо місце, щоб уникнути частих перевиділень пам'яті QList.
-	// Припускаємо середню довжину рядка в сейвах Paradox ~40 символів.
+	// Reserve some memory to use less reallocations
 	m_data.reserve(file_size / 40);
 
 	qint64 start = 0;

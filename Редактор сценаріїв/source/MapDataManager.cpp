@@ -162,7 +162,7 @@ void MapDataManager::removeCoreFromProvinces(QList<int> provinces, QString count
 	province_manager->removeCoreFromProvinces(provinces, country_tag);
 }
 
-ProvinceInfo MapDataManager::getProvinceInfo(int province)
+Province MapDataManager::getProvinceInfo(int province)
 {
 	return province_manager->getProvinceInfo(province);
 }
@@ -222,6 +222,11 @@ void MapDataManager::handleClickAtProvince(int x, int y)
 		highlight_timer.stop();
 	else
 		highlight_timer.start(1000);
+}
+
+void MapDataManager::setProvincePopData(int provinceID, const QList<PopData>& population)
+{
+	province_manager->setProvincePopData(provinceID, population);
 }
 
 

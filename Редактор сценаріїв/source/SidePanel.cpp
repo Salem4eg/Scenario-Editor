@@ -225,8 +225,9 @@ void SidePanel::fill_countries_list()
     auto completer = new QCompleter(countries_and_tags, countries_list);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setFilterMode(Qt::MatchContains);
+    completer->setCompletionMode(QCompleter::PopupCompletion);
     countries_list->setCompleter(completer);
-
+    countries_list->setInsertPolicy(QComboBox::NoInsert);
     countries_list->setCurrentIndex(-1);
 
     completer->popup()->setStyleSheet(

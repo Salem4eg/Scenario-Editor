@@ -1,6 +1,5 @@
 #include "ProvinceSaveManager.h"
 #include <QRegularExpression>
-#include "SaveGameStreamScanner.h"
 
 ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directory, QObject *parent)
 	: m_save_path(save_path), ProvinceManager(parent)
@@ -14,7 +13,7 @@ ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directo
 ProvinceSaveManager::~ProvinceSaveManager()
 {
 	qDebug() << "~ProvinceSaveManager()";
-	//saveFile();
+	saveFile();
 }
 
 void ProvinceSaveManager::changeProvincesOwner(QList<int> provinces, QString country_tag)
@@ -41,15 +40,9 @@ void ProvinceSaveManager::removeCoreFromProvinces(QList<int> provinces, QString 
 	}
 }
 
-ProvinceInfo ProvinceSaveManager::getProvinceInfo(int provinceID)
+Province ProvinceSaveManager::getProvinceInfo(int provinceID)
 {	
-	ProvinceInfo provinceInfo;
-
-	provinceInfo.name = m_provinces[provinceID].name;
-	provinceInfo.owner = m_provinces[provinceID].owner;
-	provinceInfo.cores = m_provinces[provinceID].cores;
-
-	return provinceInfo;
+	return m_provinces[provinceID];
 }
 
 void ProvinceSaveManager::loadProvinces(ParadoxGameData& game_data)
@@ -65,6 +58,17 @@ void ProvinceSaveManager::loadProvinces(ParadoxGameData& game_data)
 
 }
 
+void ProvinceSaveManager::setTypes(const QStringList& popTypes)
+{
+	m_popTypes = popTypes;
+}
+
+void ProvinceSaveManager::setProvincePopData(int provinceID, const QList<PopData>& population)
+{
+	m_provinces[provinceID].isModified = true;
+	m_provinces[provinceID].population = population;
+}
+
 void ProvinceSaveManager::loadSaveFile()
 {
 	QFile file(m_save_path);
@@ -77,7 +81,7 @@ void ProvinceSaveManager::loadSaveFile()
 
 	auto memoryData = file.map(0, file.size());
 
-	SaveGameStreamScanner scanner(memoryData, file.size());
+	FileStreamScanner scanner(memoryData, file.size());
 	int firstProvinceId = parseHeader(&scanner);
 
 	if (firstProvinceId == -1) 
@@ -211,7 +215,7 @@ void ProvinceSaveManager::saveFile()
 	}
 }
 
-int ProvinceSaveManager::parseHeader(SaveGameStreamScanner* scanner)
+int ProvinceSaveManager::parseHeader(FileStreamScanner* scanner)
 {
 	int firstProvinceId = -1;
 	TokenType token;
@@ -247,7 +251,7 @@ int ProvinceSaveManager::parseHeader(SaveGameStreamScanner* scanner)
 	return firstProvinceId;
 }
 
-void ProvinceSaveManager::parseProvincesBlock(SaveGameStreamScanner * scanner, int firstProvinceId)
+void ProvinceSaveManager::parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId)
 {
 	int currentProvinceId = firstProvinceId;
 	TokenType token;
@@ -307,11 +311,12 @@ void ProvinceSaveManager::parseProvincesBlock(SaveGameStreamScanner * scanner, i
 	}
 }
 
-void ProvinceSaveManager::parseProvinceBlock(SaveGameStreamScanner* scanner, Province& province)
+void ProvinceSaveManager::parseProvinceBlock(FileStreamScanner* scanner, Province& province)
 {
 	int depth = 1;
 	TokenType token;
 	QString value;
+	bool hasPopsStarted = false;
 
 	qint64 lastReadPosition = scanner->currentOffset();
 
@@ -327,43 +332,248 @@ void ProvinceSaveManager::parseProvinceBlock(SaveGameStreamScanner* scanner, Pro
 		}
 		else if (depth == 1 && token == TokenType::Identifier)
 		{
+
 			bool isTargetFields = (value == "owner") || (value == "controller") || (value == "name") || (value == "core");
 
 			if (!isTargetFields)
-				continue;
+			{
+				if (m_popTypes.contains(value))
+				{
 
+					qint64 beforeTokenPos = scanner->currentOffset() - value.length();
+					if (beforeTokenPos > lastReadPosition)
+					{
+						QString text = scanner->getTextBetween(lastReadPosition, beforeTokenPos);
+						if (!text.trimmed().isEmpty())
+						{
+							if (hasPopsStarted)
+								province.rawLinesAfterPops.append(text);
+							else
+								province.rawLinesBeforePops.append(text);
+						}
+					}
+
+					hasPopsStarted = true;
+					parsePopInProvinceBlock(scanner, province, value);
+					lastReadPosition = scanner->currentOffset();
+				}
+				continue;
+			}
+
+			// Для цільових полів (owner, controller, name, core)
 			qint64 beforeTokenPos = scanner->currentOffset() - value.length();
 			if (beforeTokenPos > lastReadPosition)
 			{
 				QString text = scanner->getTextBetween(lastReadPosition, beforeTokenPos);
 				if (!text.trimmed().isEmpty())
-					province.rawLines.append(text);
+				{
+					if (hasPopsStarted)
+						province.rawLinesAfterPops.append(text);
+					else
+						province.rawLinesBeforePops.append(text);
+				}
 			}
 
 			QString identifier = value;
 			token = scanner->nextToken(value); // Expecting '='
 			token = scanner->nextToken(value); // Expecting a tag
 
-
-			if (identifier == "owner") 
+			if (identifier == "owner")
 				province.owner = value;
-			else if (identifier == "controller") 
+			else if (identifier == "controller")
 				province.controller = value;
-			else if (identifier == "name") 
+			else if (identifier == "name")
 				province.name = value;
-			else if (identifier == "core") 
+			else if (identifier == "core")
 				province.cores.push_back(value);
 
 			lastReadPosition = scanner->currentOffset();
 		}
 	}
 
+	// Забираємо все, що залишилося до кінця провінції
 	if (scanner->currentOffset() > lastReadPosition)
 	{
 		QString text = scanner->getTextBetween(lastReadPosition, scanner->currentOffset());
 		if (!text.trimmed().isEmpty())
-			province.rawLines.append(text);
+		{
+			if (hasPopsStarted)
+				province.rawLinesAfterPops.append(text);
+			else
+				province.rawLinesBeforePops.append(text);
+		}
 	}
+}
+
+void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Province& province, const QString& popType)
+{
+	int depth = 1;
+	TokenType token;
+	QString value;
+
+	if ((token = scanner->nextToken(value)) != TokenType::Equals)
+		return;
+	if ((token = scanner->nextToken(value)) != TokenType::OpenBrace)
+		return;
+	depth++;
+
+	PopData pop;
+	pop.type = popType;
+	static const QStringList targetFields { "id", "size", "money", "con", "mil", "literacy" };
+	qint64 lastReadPosition = scanner->currentOffset();
+
+	while (depth >= 2 && (token = scanner->nextToken(value)) != TokenType::EndOfFile)
+	{
+		if (depth == 2 && token == TokenType::Identifier)
+		{
+			QString varName = value;
+
+			if (targetFields.contains(varName))
+			{
+				if (scanner->nextToken(value) != TokenType::Equals) 
+					continue;
+				if (scanner->nextToken(value) != TokenType::Identifier) 
+					continue;
+
+				if (varName == "id")
+					pop.id = value.toInt();
+				else if (varName == "size")
+					pop.size = value.toInt();
+				else if (varName == "money")
+					pop.money = value.toFloat();
+				else if (varName == "con")
+					pop.consciousness = value.toFloat();
+				else if (varName == "mil")
+					pop.militancy = value.toFloat();
+				else if (varName == "literacy")
+					pop.literacy = value.toFloat();
+
+				lastReadPosition = scanner->currentOffset();
+			}
+			else if (varName == "ideology")
+			{
+				if (scanner->nextToken(value) != TokenType::Equals)
+					continue;
+				if (scanner->nextToken(value) != TokenType::OpenBrace)
+					continue;
+
+				QList<Ideology> ideologies;
+				while ((token = scanner->nextToken(value)) != TokenType::EndOfFile)
+				{
+					if (token == TokenType::CloseBrace) 
+						break;
+					if (token == TokenType::Identifier)
+					{
+						int id = value.toInt();
+						if (scanner->nextToken(value) == TokenType::Equals &&
+							scanner->nextToken(value) == TokenType::Identifier)
+						{
+							ideologies.push_back(Ideology { .id = id, .percentage = value.toFloat() });
+						}
+					}
+				}
+				pop.ideologies = ideologies;
+				lastReadPosition = scanner->currentOffset();
+			}
+			else if (varName == "issues")
+			{
+				if (scanner->nextToken(value) != TokenType::Equals)
+					continue;
+				if (scanner->nextToken(value) != TokenType::OpenBrace)
+					continue;
+
+				QList<QPair<int, float>> issues;
+				while ((token = scanner->nextToken(value)) != TokenType::EndOfFile)
+				{
+					if (token == TokenType::CloseBrace)
+						break;
+					if (token == TokenType::Identifier)
+					{
+						int id = value.toInt();
+						if (scanner->nextToken(value) == TokenType::Equals &&
+							scanner->nextToken(value) == TokenType::Identifier)
+						{
+							issues.push_back(QPair<int, float> { id, value.toFloat() });
+						}
+					}
+				}
+				pop.issues = issues;
+				lastReadPosition = scanner->currentOffset();
+			}
+			else if (pop.culture.isEmpty())
+			{
+				qint64 startTokenPos = scanner->currentOffset() - varName.length();
+
+				if (scanner->nextToken(value) == TokenType::Equals)
+				{
+					token = scanner->nextToken(value);
+					if (token == TokenType::Identifier)
+					{
+						pop.culture = varName;
+						pop.religion = value;
+						lastReadPosition = scanner->currentOffset();
+						continue;
+					}
+				}
+
+				// if not culture-religion pair, treat it as a raw field
+				if (token == TokenType::OpenBrace)
+				{
+					int innerDepth = 1;
+					while (innerDepth > 0 && (token = scanner->nextToken(value)) != TokenType::EndOfFile)
+					{
+						if (token == TokenType::OpenBrace) innerDepth++;
+						else if (token == TokenType::CloseBrace) innerDepth--;
+					}
+				}
+
+				qint64 endTokenPos = scanner->currentOffset();
+				QString rawChunk = scanner->getTextBetween(startTokenPos, endTokenPos);
+				if (!rawChunk.trimmed().isEmpty())
+					pop.rawLines.append(rawChunk);
+
+				lastReadPosition = endTokenPos;
+			}
+			else
+			{
+				qint64 startTokenPos = scanner->currentOffset() - varName.length();
+
+				token = scanner->nextToken(value);
+				if (token == TokenType::Equals)
+				{
+					token = scanner->nextToken(value);
+					if (token == TokenType::OpenBrace)
+					{
+						int innerDepth = 1;
+						while (innerDepth > 0 && (token = scanner->nextToken(value)) != TokenType::EndOfFile)
+						{
+							if (token == TokenType::OpenBrace) innerDepth++;
+							else if (token == TokenType::CloseBrace) innerDepth--;
+						}
+					}
+				}
+
+				qint64 endTokenPos = scanner->currentOffset();
+				QString rawChunk = scanner->getTextBetween(startTokenPos, endTokenPos);
+				if (!rawChunk.trimmed().isEmpty())
+					pop.rawLines.append(rawChunk);
+
+				lastReadPosition = endTokenPos;
+			}
+			continue;
+		}
+
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+		}
+	}
+
+	province.population.push_back(pop);
 }
 
 QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
@@ -390,7 +600,53 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 		}
 	}
 
-	for (const QString& line : province.rawLines)
+	for (const QString& line : province.rawLinesBeforePops)
+	{
+		stream << line << "\n";
+	}
+
+	for (const PopData& pop : province.population)
+	{
+		stream << "\n\t" << pop.type.toUtf8() << "= \n\t{\n";
+		stream << "\t\tid=" << pop.id << "\n";
+		stream << "\t\tsize=" << pop.size << "\n";
+		stream << "\t\t" << pop.culture.toUtf8() << "=" << pop.religion.toUtf8() << "\n";
+		stream << "\t\tmoney=" << pop.money << "\n";
+
+		if (!pop.ideologies.isEmpty())
+		{
+			stream << "\t\tideology=\n\t{\n";
+			for (const Ideology& ideology : pop.ideologies)
+			{
+				stream << QString("%1=%2").arg(ideology.id).arg(ideology.percentage);
+			}
+			stream << "\t\t}\n";
+		}
+
+		if (!pop.issues.isEmpty())
+		{
+			stream << "\t\tissues=\n\t{\n";
+			for (const QPair<int, float>& issue : pop.issues)
+			{
+				stream << QString("%1=%2").arg(issue.first).arg(issue.second);
+			}
+			stream << "\t\t}\n";
+		}
+
+
+		stream << "\t\tcon=" << pop.consciousness << "\n";
+		stream << "\t\tmil=" << pop.militancy << "\n";
+		stream << "\t\tliteracy=" << pop.literacy << "\n";
+
+
+		for (const QString& line : pop.rawLines)
+		{
+			stream << line;
+		}
+		stream << "\t}\n";
+	}
+
+	for (const QString& line : province.rawLinesAfterPops)
 	{
 		stream << line << "\n";
 	}

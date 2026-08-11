@@ -41,12 +41,14 @@ public slots:
 	void addCoreToProvinces(QList<int> provinces, QString country_tag);
 	void removeCoreFromProvinces(QList<int> provinces, QString country_tag);
 
-	ProvinceInfo getProvinceInfo(int province);
+	Province getProvinceInfo(int province);
 
 	void setProvinceChoosingMode(bool choose);
 	void showHighlighting(bool show);
 
 	void handleClickAtProvince(int x, int y);
+
+	void setProvincePopData(int provinceID, const QList<PopData>& population);
 
 
 signals:

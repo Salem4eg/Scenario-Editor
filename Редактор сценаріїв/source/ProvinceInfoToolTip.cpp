@@ -41,17 +41,39 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 
 	auto* close_button = new QPushButton("Close");
 	close_button->setFixedSize(80, 30);
+	auto* edit_population_button = new QPushButton("Edit Population");
+	edit_population_button->setFixedSize(120, 30);
 	bottom_layout->addWidget(close_button, 0, Qt::AlignHCenter);
+	bottom_layout->addWidget(edit_population_button, 0, Qt::AlignHCenter);
 
 	layout->addWidget(top_widget);
 	layout->addWidget(middle_widget);
 	layout->addWidget(bottom_widget);
 
+	m_populationDialog = new ProvincePopulationDialog(this);
 
 	connect(close_button, &QPushButton::clicked, this, [this]()
-		{
-			emit hideToolTip();
-		});
+	{
+		emit hideToolTip();
+	});
+
+	connect(edit_population_button, &QPushButton::pressed, this, [this]()
+	{
+		m_populationDialog->setPopData(m_provinceInfo.population);
+		m_populationDialog->show();
+	});
+
+	connect(m_populationDialog, &ProvincePopulationDialog::closeWidget, this, [this]()
+	{
+		m_populationDialog->hide();
+	});
+
+	connect(m_populationDialog, &ProvincePopulationDialog::hasChanges, this, [this]()
+	{
+		m_provinceInfo.population = m_populationDialog->getPopData();
+		
+		emit hasChanges();
+	});
 
 	widget->setObjectName("tooltip");
 
@@ -95,11 +117,19 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 ProvinceInfoToolTip::~ProvinceInfoToolTip()
 {}
 
-void ProvinceInfoToolTip::setInfo(const ProvinceInfo& info)
+Province ProvinceInfoToolTip::getInfo() const
+{
+	return m_provinceInfo;
+}
+
+
+void ProvinceInfoToolTip::setInfo(const Province& info)
 {
 	m_name->setText(info.name);
 	m_owner->setText("Owner: " + info.owner);
 	m_cores->setText("Cores: " + info.cores.join(", "));
+
+	m_provinceInfo = info;
 }
 
 void ProvinceInfoToolTip::mousePressEvent(QMouseEvent* event)

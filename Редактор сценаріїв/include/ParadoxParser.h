@@ -8,6 +8,7 @@
 
 #include "ProvinceController.h"
 #include "FileReader.h"
+#include "FileStreamScanner.h"
 #include "Structures.h"
 
 class ParadoxParser  : public QObject
@@ -21,7 +22,10 @@ public:
 	void loadProvincesDefinition(ParadoxGameData& game_data);
 	void loadCountriesColors(ParadoxGameData& game_data);
 	
-
+	QList<DemographicCategory> loadIdeologies();
+	QList<DemographicCategory> loadCultures();
+	QList<DemographicCategory> loadReligions();
+	QList<DemographicCategory> loadPopTypes();
 
 private:
 	QString provinces_definition;
@@ -38,5 +42,10 @@ private:
 	QList<QString> readCountriesFile();
 	QList<QPair<QString, QString>> parseCountriesFilePaths(QList<QString>& countries_rows);
 	void extractCountriesColors(QList<QPair<QString, QString>>& countries_filepaths, ParadoxGameData& game_data);
+
+	QColor getPopTypeColor(QString filepath);
+	// Checks for errors, throws if any problem
+	uchar* getMappedData(QFile& file);
+	QList<DemographicCategory> getDemographicCategories(QString filepath, bool isFloat = false);
 };
 

@@ -42,6 +42,10 @@ private:
 
 	QStringList m_popTypes;
 	QMap<int, Province> m_provinces;
+	// Stores provinceID as key and country population filepath id as value
+	// Country population filepath locates at history/pop
+	QHash<int, int> m_provinceToPopPathIndex;
+	QList<QString> m_countryPopFilePaths;
 
 	void getProvincesFilepath(QString provinces_directory);
 	int getProvinceFromFilepath(QString filepath);
@@ -59,7 +63,7 @@ private:
 	int getProvinceIDFromFilepath(const QString& filepath);
 	QString getOwnerFromProvince(const QString& filepath);
 
-	void parsePopFiles(QString country_filepath);
+	void parsePopFiles(QString& country_filepath);
 	PopData parsePopInProvince(FileStreamScanner& scanner, TokenType token, QString& value, int provinceID, int& depth);
 };
 

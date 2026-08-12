@@ -92,8 +92,13 @@ void ProvinceBaseManager::loadProvinces(ParadoxGameData& game_data)
 
 	while (pops_it.hasNext())
 	{
-		parsePopFiles(pops_it.next());
+		QString filepath = pops_it.next();
+
+		parsePopFiles(filepath);
+
+		m_countryPopFilePaths.push_back(filepath);
 	}
+
 }
 
 void ProvinceBaseManager::setTypes(const QStringList& popTypes)
@@ -377,7 +382,7 @@ QString ProvinceBaseManager::getOwnerFromProvince(const QString& filepath)
 	return owner;
 }
 
-void ProvinceBaseManager::parsePopFiles(QString country_filepath)
+void ProvinceBaseManager::parsePopFiles(QString& country_filepath)
 {
 	QFile country_file(country_filepath);
 
@@ -399,6 +404,7 @@ void ProvinceBaseManager::parsePopFiles(QString country_filepath)
 		if (token == TokenType::Identifier && depth == 0)
 		{
 			int provinceId = value.toInt();
+			m_provinceToPopPathIndex.insert(provinceId, m_countryPopFilePaths.size());
 
 			scanner.nextToken(value); // =
 			scanner.nextToken(value); // {

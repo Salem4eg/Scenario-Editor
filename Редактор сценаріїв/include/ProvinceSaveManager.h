@@ -42,7 +42,7 @@ private:
 	QString m_default_map;
 
 	QMap<int, Province> m_provinces;
-
+	
 	QStringList m_popTypes;
 
 	void loadSaveFile();

@@ -63,8 +63,9 @@ struct Province
 	QStringList cores;
 	QString name;
 
-	QStringList rawLinesBeforePops;
 	QList<PopData> population;
+	// rawLines for ProvinceSaveManager
+	QStringList rawLinesBeforePops;
 	QStringList rawLinesAfterPops;
 
 	bool isModified = false;

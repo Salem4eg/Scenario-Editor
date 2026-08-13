@@ -5,6 +5,7 @@
 #include <QList>
 #include <QHash>
 #include <QMap>
+#include <QSaveFile>
 #include "Structures.h"
 #include "FileReader.h"
 #include "FileStreamScanner.h"
@@ -65,5 +66,9 @@ private:
 
 	void parsePopFiles(QString& country_filepath);
 	PopData parsePopInProvince(FileStreamScanner& scanner, TokenType token, QString& value, int provinceID, int& depth);
+
+	void changePopulationFiles();
+	void changeProvincePopulationData(QString& country_population_filepath, const QList<int>& provinces);
+	QByteArray serializeProvincePopulation(const Province& province);
 };
 

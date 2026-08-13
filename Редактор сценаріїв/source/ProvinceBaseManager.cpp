@@ -109,6 +109,7 @@ void ProvinceBaseManager::setTypes(const QStringList& popTypes)
 void ProvinceBaseManager::setProvincePopData(int provinceID, const QList<PopData>& population)
 {
 	m_provinces[provinceID].population = population;
+	m_provinces[provinceID].isModified = true;	
 }
 
 
@@ -404,6 +405,7 @@ void ProvinceBaseManager::parsePopFiles(QString& country_filepath)
 		if (token == TokenType::Identifier && depth == 0)
 		{
 			int provinceId = value.toInt();
+			m_provinces[provinceId].startOffSet = scanner.currentOffset() - value.size();
 			m_provinceToPopPathIndex.insert(provinceId, m_countryPopFilePaths.size());
 
 			scanner.nextToken(value); // =
@@ -416,6 +418,7 @@ void ProvinceBaseManager::parsePopFiles(QString& country_filepath)
 				PopData pop = parsePopInProvince(scanner, token, value, provinceId, depth);
 				m_provinces[provinceId].population.append(pop);
 			}
+			m_provinces[provinceId].endOffSet = scanner.currentOffset();
 		}
 		else if (token == TokenType::OpenBrace)
 			depth++;
@@ -457,4 +460,117 @@ PopData ProvinceBaseManager::parsePopInProvince(FileStreamScanner& scanner, Toke
 	}
 
 	return pop;
+}
+
+void ProvinceBaseManager::changePopulationFiles()
+{
+	QList<Province> modified_provinces;
+
+	for (const auto& province : m_provinces)
+		if (province.isModified)
+			modified_provinces.push_back(province);
+
+	// Sort modified provinces by the files they belong to
+	QHash<int, QList<int>> filepath_index_to_provinces;
+
+	for (const auto& province : modified_provinces)
+	{
+		int pop_filepath_index = m_provinceToPopPathIndex.value(province.id);
+
+		filepath_index_to_provinces[pop_filepath_index].push_back(province.id);
+	}
+
+	// Rewrite province population files one by one
+	for (int filepath_index : filepath_index_to_provinces.keys())
+	{
+		QString province_pops_filepath = m_countryPopFilePaths.value(filepath_index);
+
+		changeProvincePopulationData(province_pops_filepath, filepath_index_to_provinces[filepath_index]);
+	}
+}
+
+void ProvinceBaseManager::changeProvincePopulationData(QString& country_population_filepath, const QList<int>& provinces)
+{
+	QFile province_file(country_population_filepath);
+
+	if (!province_file.open(QFile::ReadOnly | QFile::Text))
+	{
+		QString error_str(QString("Couldn't open file: %1 for reading province population data").arg(country_population_filepath));
+		throw std::runtime_error(error_str.toStdString());
+	}
+
+	QSaveFile saveFile(country_population_filepath);
+	if (!saveFile.open(QFile::WriteOnly | QFile::Text))
+	{
+		QString error_str(QString("Couldn't open file: %1 for writing province population data").arg(country_population_filepath));
+		throw std::runtime_error(error_str.toStdString());
+	}
+
+	char* mapped_data = reinterpret_cast<char*>(province_file.map(0, province_file.size()));
+	QList<Province> modified_provinces;
+
+	for (int provinceID : provinces)
+		modified_provinces.push_back(m_provinces[provinceID]);
+
+	std::sort(modified_provinces.begin(), modified_provinces.end(), [](const Province& first, const Province& second)
+	{
+		return first.startOffSet < second.startOffSet;
+	});
+
+	qint64 current_position = 0;
+
+	for (const auto& province : modified_provinces)
+	{
+		qint64 bytesToWrite = province.startOffSet - current_position;
+
+		if (bytesToWrite > 0)
+		{
+			saveFile.write(mapped_data + current_position, bytesToWrite);
+		}
+
+		auto population = serializeProvincePopulation(province);
+
+		saveFile.write(population);
+
+		current_position = province.endOffSet;
+	}
+
+	if (current_position < province_file.size())
+	{
+		qint64 bytesToWrite = province_file.size() - current_position;
+		saveFile.write(mapped_data+ current_position, bytesToWrite);
+	}
+
+	province_file.unmap(reinterpret_cast<uchar*>(mapped_data));
+	province_file.close();
+	bool isSaved = saveFile.commit();
+
+	if (!isSaved)
+	{
+		qWarning() << "Failed to save modified provinces to save file:" << country_population_filepath << " reason: " << saveFile.errorString();
+	}
+}
+
+QByteArray ProvinceBaseManager::serializeProvincePopulation(const Province& province)
+{
+	QByteArray population;
+
+	QTextStream stream(&population);
+
+	stream << province.id << " = {\n";
+
+	for (const auto& pop : province.population)
+	{
+		stream << "\t" << pop.type << " = {\n";
+
+		stream << "\t\t" << "culture"	<< " = " << pop.culture << "\n";
+		stream << "\t\t" << "religion"	<< " = " << pop.religion << "\n";
+		stream << "\t\t" << "size"		<< " = " << pop.size << "\n";
+		
+		stream << "\t}\n";
+	}
+
+	stream << "}\n";
+
+	return population;
 }

@@ -12,7 +12,9 @@ ProvinceBaseManager::ProvinceBaseManager(QString game_directory, QObject *parent
 }
 
 ProvinceBaseManager::~ProvinceBaseManager()
-{}
+{
+	changePopulationFiles();
+}
 
 void ProvinceBaseManager::changeProvincesOwner(QList<int> provinces, QString country_tag)
 {
@@ -75,6 +77,8 @@ Province ProvinceBaseManager::getProvinceInfo(int province)
 	}
 
 	info.name = getProvinceName(province);
+
+	info.population = m_provinces[province].population;
 
 	return info;
 }
@@ -405,6 +409,7 @@ void ProvinceBaseManager::parsePopFiles(QString& country_filepath)
 		if (token == TokenType::Identifier && depth == 0)
 		{
 			int provinceId = value.toInt();
+			m_provinces[provinceId].id = provinceId;
 			m_provinces[provinceId].startOffSet = scanner.currentOffset() - value.size();
 			m_provinceToPopPathIndex.insert(provinceId, m_countryPopFilePaths.size());
 
@@ -419,6 +424,8 @@ void ProvinceBaseManager::parsePopFiles(QString& country_filepath)
 				m_provinces[provinceId].population.append(pop);
 			}
 			m_provinces[provinceId].endOffSet = scanner.currentOffset();
+
+			depth--;
 		}
 		else if (token == TokenType::OpenBrace)
 			depth++;
@@ -436,6 +443,8 @@ PopData ProvinceBaseManager::parsePopInProvince(FileStreamScanner& scanner, Toke
 	if (token != TokenType::Identifier)
 		throw std::runtime_error("Couldn't parse pop in province: " + QString::number(provinceID).toStdString());
 
+	pop.id = currentPopId;
+	currentPopId++;
 	pop.type = value;
 
 	scanner.nextToken(value); // =
@@ -538,7 +547,7 @@ void ProvinceBaseManager::changeProvincePopulationData(QString& country_populati
 	if (current_position < province_file.size())
 	{
 		qint64 bytesToWrite = province_file.size() - current_position;
-		saveFile.write(mapped_data+ current_position, bytesToWrite);
+		saveFile.write(mapped_data + current_position, bytesToWrite);
 	}
 
 	province_file.unmap(reinterpret_cast<uchar*>(mapped_data));

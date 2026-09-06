@@ -48,6 +48,8 @@ private:
 	QHash<int, int> m_provinceToPopPathIndex;
 	QList<QString> m_countryPopFilePaths;
 
+	int currentPopId = 0;
+
 	void getProvincesFilepath(QString provinces_directory);
 	int getProvinceFromFilepath(QString filepath);
 

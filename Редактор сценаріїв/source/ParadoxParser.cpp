@@ -78,7 +78,7 @@ QList<DemographicCategory> ParadoxParser::loadCultures()
 
 QList<DemographicCategory> ParadoxParser::loadReligions()
 {
-	return getDemographicCategories(directory_path + "/common/religions.txt");
+	return getDemographicCategories(directory_path + "/common/religion.txt", true);
 }
 
 QList<DemographicCategory> ParadoxParser::loadPopTypes()

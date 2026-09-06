@@ -60,7 +60,7 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 	connect(edit_population_button, &QPushButton::pressed, this, [this]()
 	{
 		m_populationDialog->setPopData(m_provinceInfo.population);
-		m_populationDialog->show();
+		m_populationDialog->exec();
 	});
 
 	connect(m_populationDialog, &ProvincePopulationDialog::closeWidget, this, [this]()
@@ -120,6 +120,26 @@ ProvinceInfoToolTip::~ProvinceInfoToolTip()
 Province ProvinceInfoToolTip::getInfo() const
 {
 	return m_provinceInfo;
+}
+
+void ProvinceInfoToolTip::setCultures(const QList<DemographicCategory>& cultures)
+{
+	m_populationDialog->setCultures(cultures);
+}
+
+void ProvinceInfoToolTip::setTypes(const QList<DemographicCategory>& types)
+{
+	m_populationDialog->setTypes(types);
+}
+
+void ProvinceInfoToolTip::setReligions(const QList<DemographicCategory>& religions)
+{
+	m_populationDialog->setReligions(religions);
+}
+
+void ProvinceInfoToolTip::setIdeologies(const QList<DemographicCategory>& ideologies)
+{
+	m_populationDialog->setIdeologies(ideologies);
 }
 
 

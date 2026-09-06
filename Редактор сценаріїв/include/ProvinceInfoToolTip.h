@@ -5,7 +5,7 @@
 #include <QPushButton>
 #include <QGraphicsEffect>
 #include "Structures.h"
-#include "ProvincePopulationDialog.h"
+#include "ProvinceBasePopulationDialog.h"
 
 class ProvinceInfoToolTip : public QWidget
 {
@@ -18,6 +18,11 @@ public:
 public slots:
 	void setInfo(const Province& info);
 	Province getInfo() const;
+
+	void setCultures(const QList<DemographicCategory>& cultures);
+	void setTypes(const QList<DemographicCategory>& types);
+	void setReligions(const QList<DemographicCategory>& religions);
+	void setIdeologies(const QList<DemographicCategory>& ideologies);
 	
 signals:
 	void hideToolTip();
@@ -34,6 +39,6 @@ private:
 	QLabel* m_owner;
 	QLabel* m_cores;
 	Province m_provinceInfo;
-	ProvincePopulationDialog* m_populationDialog;
+	ProvinceBasePopulationDialog* m_populationDialog;
 };
 

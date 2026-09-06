@@ -21,10 +21,13 @@ public:
 	~PopEditorDialog();
 
 	void setPopData(const PopData& pop);
-	void setCultures(const QList<QString>& cultures);
-	void setTypes(const QList<QString>& types);
-	void setReligions(const QList<QString>& religions);
 
+	// One time usage, for initializing all available cultures
+	void setCultures(const QList<QString>& cultures);
+	// One time usage, for initializing all available types
+	void setTypes(const QList<QString>& types);
+	// One time usage, for initializing all available religions
+	void setReligions(const QList<QString>& religions);
 	// One time usage, for initializing all available ideologies
 	void setIdeologies(const QList<Ideology>& ideologies);
 signals:

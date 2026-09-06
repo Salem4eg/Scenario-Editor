@@ -10,7 +10,8 @@
 
 #include "ParadoxParser.h"
 #include "MapImageProcessor.h"
-#include "ProvinceController.h"
+#include "ProvinceSaveManager.h"
+#include "ProvinceBaseManager.h"
 
 class MapDataManager  : public QObject
 {
@@ -59,12 +60,17 @@ signals:
 	void getChosenProvinceInfo(int provinceID);
 	void highlightProvinces(bool highlight);
 
+	void culturesLoaded(const QList<DemographicCategory>& cultures);
+	void religionsLoaded(const QList<DemographicCategory>& religions);
+	void popTypesLoaded(const QList<DemographicCategory>& popTypes);
+	void ideologiesLoaded(const QList<DemographicCategory>& ideologies);
+
 private:
 	void highlightChosenProvinces();
 
 private:
 	MapImageProcessor* image_processor;
-	ProvinceController* province_manager;
+	ProvinceManager* province_manager;
 
 
 	QString m_directory_path;

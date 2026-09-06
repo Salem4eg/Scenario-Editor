@@ -5,7 +5,11 @@ MapDataManager::MapDataManager(QString directory_path, QString save_file_path, Q
 {
 
 	image_processor = new MapImageProcessor(directory_path, this);
-	province_manager = new ProvinceController(directory_path, save_file_path, this);
+	
+	if (save_file_path.isEmpty())
+		province_manager = new ProvinceBaseManager(directory_path, this);
+	else
+		province_manager = new ProvinceSaveManager(save_file_path, directory_path, this);
 
 
 	connect(&highlight_timer, &QTimer::timeout, this, &MapDataManager::highlightChosenProvinces);
@@ -20,6 +24,25 @@ void MapDataManager::prepare()
 {
 	ParadoxParser parser(m_directory_path);
 	ParadoxGameData game_data;
+
+
+	auto cultures = parser.loadCultures();
+	auto religions = parser.loadReligions();
+	auto types = parser.loadPopTypes();
+	auto ideologies = parser.loadIdeologies();
+
+	emit culturesLoaded(cultures);
+	emit religionsLoaded(religions);
+	emit popTypesLoaded(types);
+	emit ideologiesLoaded(ideologies);
+
+	QStringList popType;
+
+	for (const auto& type : types)
+		popType.push_back(type.type);
+
+	province_manager->setTypes(popType);
+
 
 	qDebug() << "loadProvincesDefinition()";
 	startDebugTimer();
@@ -60,7 +83,7 @@ void MapDataManager::prepare()
 	qDebug() << "loadCountriesProvinces()";
 	startDebugTimer();
 
-	province_manager->loadCountriesProvinces(game_data);
+	province_manager->loadProvinces(game_data);
 	QtConcurrent::run([this]()
 	{
 		emit progressMade(5);

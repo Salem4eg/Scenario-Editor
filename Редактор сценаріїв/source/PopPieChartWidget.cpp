@@ -131,10 +131,11 @@ void PopPieChartWidget::clearLegend()
 		if (QWidget* widget = item->widget()) 
 		{
 			widget->deleteLater();
+			widget->hide();
 		}
 	
 		delete item;
 	}
 	
-}
+	}
 

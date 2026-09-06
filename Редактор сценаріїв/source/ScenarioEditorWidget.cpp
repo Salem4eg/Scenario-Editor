@@ -55,13 +55,13 @@ void ScenarioEditorWidget::prepare()
 {
 	QtConcurrent::run([this]()
     {
+        make_connections();
         data_manager->prepare();
 
         set_map();
 
         
 
-        make_connections();
 
         countries_map_item->setZValue(0);
         highlight_map_item->setZValue(1);
@@ -134,6 +134,11 @@ void ScenarioEditorWidget::make_connections()
             chosen_provinces.push_back(provinceID);
             highlight_map_item->setPixmap(QPixmap::fromImage(highlight_layer));
         });
+
+    connect(data_manager, &MapDataManager::culturesLoaded, province_tooltip, &ProvinceInfoToolTip::setCultures);
+    connect(data_manager, &MapDataManager::religionsLoaded, province_tooltip, &ProvinceInfoToolTip::setReligions);
+    connect(data_manager, &MapDataManager::popTypesLoaded, province_tooltip, &ProvinceInfoToolTip::setTypes);
+    connect(data_manager, &MapDataManager::ideologiesLoaded, province_tooltip, &ProvinceInfoToolTip::setIdeologies);
 
     connect(data_manager, &MapDataManager::removeProvinceFromHighlight, [&](const QList<QPoint>& province_pixels, int provinceID)
         {

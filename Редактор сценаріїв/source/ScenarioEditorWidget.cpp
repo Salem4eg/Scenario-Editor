@@ -12,6 +12,7 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
 
 
     auto* main_layout = new QVBoxLayout(this);
+	main_layout->setContentsMargins(0, 0, 0, 0);
 
     scene = new QGraphicsScene(this);
     view = new MapView(scene, this);
@@ -22,6 +23,8 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
     view->setDragMode(QGraphicsView::ScrollHandDrag);
     view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     view->setResizeAnchor(QGraphicsView::AnchorUnderMouse);
+    view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     QVBoxLayout* view_layout = new QVBoxLayout(view);
     side_panel = new SidePanel;
@@ -31,8 +34,9 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
 
     side_panel->show();
 
+    bool isSaveData = saveFile.isEmpty() == false;
 
-    province_tooltip = new ProvinceInfoToolTip;
+    province_tooltip = new ProvinceInfoToolTip(isSaveData);
     tooltip = scene->addWidget(province_tooltip);
     tooltip->hide();
     tooltip->setFlag(QGraphicsItem::ItemIgnoresTransformations);

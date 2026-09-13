@@ -6,23 +6,32 @@ PopEditorDialog::PopEditorDialog(QWidget *parent)
 	setWindowModality(Qt::WindowModal);
 
 	auto* mainLayout = new QVBoxLayout(this);
+	mainLayout->setContentsMargins(0, 0, 0, 0);
 	
+	auto* centralWidget = new QWidget;
+	auto* centralLayout = new QVBoxLayout(centralWidget);
+
 	// ### POP DATA
 	auto* topWidget = new QWidget;
-	auto* topLayout = new QHBoxLayout(topWidget);
+	topLayout = new QHBoxLayout(topWidget);
 
 	auto* leftWidget = new QWidget;
 	auto* leftLayout = new QVBoxLayout(leftWidget);
 
 	/// ### LEFT PART OF DATA
+
+	// #### Size data
 	auto* sizeWidget = new QWidget;
 	auto* sizeLayout = new QHBoxLayout(sizeWidget);
 
 	auto* sizeLabel = new QLabel("Size");
 	m_sizeEdit = new QLineEdit();
+	m_sizeEdit->setAlignment(Qt::AlignHCenter);
 
 	sizeLayout->addWidget(sizeLabel);
 	sizeLayout->addWidget(m_sizeEdit);
+
+	// #### Type data
 
 	auto* typeWidget = new QWidget;
 	auto* typeLayout = new QHBoxLayout(typeWidget);
@@ -34,8 +43,13 @@ PopEditorDialog::PopEditorDialog(QWidget *parent)
 	typeLayout->addWidget(typeLabel);
 	typeLayout->addWidget(m_typeComboBox);
 
+	// #### Culture data
+
 	auto* cultureWidget = new QWidget;
 	auto* cultureLayout = new QHBoxLayout(cultureWidget);
+
+	auto* cultureContainerWidget = new QWidget;
+	auto* cultureContainerLayout = new QVBoxLayout(cultureContainerWidget);
 
 	auto* cultureLabel = new QLabel("Culture");
 	m_cultureComboBox = new QComboBox();
@@ -43,6 +57,8 @@ PopEditorDialog::PopEditorDialog(QWidget *parent)
 
 	cultureLayout->addWidget(cultureLabel);
 	cultureLayout->addWidget(m_cultureComboBox);
+
+	// #### Religion data
 
 	auto* religionWidget = new QWidget;
 	auto* religionLayout = new QHBoxLayout(religionWidget);
@@ -60,105 +76,100 @@ PopEditorDialog::PopEditorDialog(QWidget *parent)
 	leftLayout->addWidget(religionWidget);
 	leftLayout->addStretch(1);
 
-	auto* rightWidget = new QWidget;
-	auto* rightLayout = new QVBoxLayout(rightWidget);
-
-	// ### RIGHT PART OF DATA
-
-	auto* militancyWidget = new QWidget;
-	auto* militancyLayout = new QHBoxLayout(militancyWidget);
-
-	auto* militancyLabel = new QLabel("Militancy");
-	m_militancyEdit = new QLineEdit();
-
-	militancyLayout->addWidget(militancyLabel);
-	militancyLayout->addWidget(m_militancyEdit);
-
-	auto* literacyWidget = new QWidget;
-	auto* literacyLayout = new QHBoxLayout(literacyWidget);
-
-	auto* literacyLabel = new QLabel("Literacy");
-	m_literacyEdit = new QLineEdit();
-
-	literacyLayout->addWidget(literacyLabel);
-	literacyLayout->addWidget(m_literacyEdit);
-
-	auto* consciousnessWidget = new QWidget;
-	auto* consciousnessLayout = new QHBoxLayout(consciousnessWidget);
-
-	auto* consciousnessLabel = new QLabel("Consciousness");
-	m_consciousnessEdit = new QLineEdit();
-
-	consciousnessLayout->addWidget(consciousnessLabel);
-	consciousnessLayout->addWidget(m_consciousnessEdit);
-
-	auto* ideologyWidget = new QWidget;
-	auto* ideologyLayout = new QHBoxLayout(ideologyWidget);
-
-	auto* ideologyLabel = new QLabel("Ideology");
-	m_edit_ideologies = new QPushButton("Edit");
-
-	ideologyLayout->addWidget(ideologyLabel);
-	ideologyLayout->addWidget(m_edit_ideologies);
-
-
-	rightLayout->addWidget(militancyWidget);
-	rightLayout->addWidget(literacyWidget);
-	rightLayout->addWidget(consciousnessWidget);
-	rightLayout->addWidget(ideologyWidget);
-	rightLayout->addStretch(1);
-
 	topLayout->addWidget(leftWidget);
-	topLayout->addWidget(rightWidget);
 
 	// ### EXIT FROM WIDGET + DELETE GROUP
 	auto* bottomWidget = new QWidget;
 	auto* bottomLayout = new QHBoxLayout(bottomWidget);
 
-	auto* backButton = new QPushButton("Back");
-	auto* deletePopButton = new QPushButton("Delete group");
+	backButton = new QPushButton("Back");
+	deletePopButton = new QPushButton("Delete group");
 
 	bottomLayout->addStretch(1);
 	bottomLayout->addWidget(backButton, 1);
 	bottomLayout->addWidget(deletePopButton, 1, Qt::AlignRight);
 
 	
-	mainLayout->addWidget(topWidget, 0);
-	mainLayout->addWidget(bottomWidget, 0);
+	mainLayout->addWidget(centralWidget);
 
-	m_ideologyWidget = new PopIdeologyDialog(this);
-	m_ideologyWidget->hide();
+	centralLayout->addWidget(topWidget, 0);
+	centralLayout->addWidget(bottomWidget, 0);	
 
-	QRegularExpression floatingPointValidator(R"(^(10([.]0{1,2})?|[0-9](\.[0-9]{1,2})?)$)");
-	QIntValidator* intValidator = new QIntValidator(0, std::numeric_limits<int>::max(), this);
-	QRegularExpression literacyValidator(R"(^(0(\.\d{1,5})?|1(\.0{1,5})?)$)");
 
-	m_sizeEdit->setValidator(intValidator);
-	m_militancyEdit->setValidator(new QRegularExpressionValidator(floatingPointValidator, this));
-	m_consciousnessEdit->setValidator(new QRegularExpressionValidator(floatingPointValidator, this));
-	m_literacyEdit->setValidator(new QRegularExpressionValidator(literacyValidator, this));
+	centralWidget->setObjectName("background");
+	setupStyle();
+	setupConnections();
+}
 
-	connect(m_edit_ideologies, &QPushButton::pressed, this, [this]()
-	{
-		m_ideologyWidget->show();
-	});
+PopEditorDialog::~PopEditorDialog()
+{}
 
-	connect(m_ideologyWidget, &PopIdeologyDialog::backButtonPressed, this, [this]()
-	{
-		m_ideologyWidget->hide();
-	});
+void PopEditorDialog::closeEvent(QCloseEvent* event)
+{
+	saveChanges();
+	event->accept();
+}
 
-	connect(m_ideologyWidget, &PopIdeologyDialog::ideologiesChanged, this, [this](QList<Ideology> ideologies)
-	{
-		m_popData.ideologies = ideologies;
+void PopEditorDialog::saveChanges()
+{
+	if (hasChanges)
+		emit popChanged(m_popData);
+}
 
-		hasChanges = true;
-	});
+void PopEditorDialog::setPopData(const PopData& pop)
+{
+	m_popData = pop;
 
+	m_sizeEdit->setText(QString::number(pop.size));
+	m_typeComboBox->setCurrentText(pop.type);
+	m_cultureComboBox->setCurrentText(pop.culture);
+	m_religionComboBox->setCurrentText(pop.religion);
+}
+
+void PopEditorDialog::setCultures(const QList<QString>& cultures)
+{
+	m_cultureComboBox->addItems(cultures);
+	m_cultureComboBox->completer()->setModel(m_cultureComboBox->model());
+}
+
+void PopEditorDialog::setTypes(const QList<QString>& types)
+{
+	m_typeComboBox->addItems(types);
+	m_typeComboBox->completer()->setModel(m_typeComboBox->model());
+}
+
+void PopEditorDialog::setReligions(const QList<QString>& religions)
+{
+	m_religionComboBox->addItems(religions);
+	m_religionComboBox->completer()->setModel(m_religionComboBox->model());
+}
+
+void PopEditorDialog::setIdeologies(const QList<Ideology>& ideologies)
+{
+
+}
+
+
+void PopEditorDialog::setupComboBox(QComboBox* combobox)
+{
+	combobox->setEditable(true);
+	combobox->setMaxVisibleItems(15);
+	combobox->setInsertPolicy(QComboBox::NoInsert);
+	combobox->lineEdit()->setAlignment(Qt::AlignHCenter);
+
+
+	auto* completer = new QCompleter(combobox->model(), combobox);
+	completer->setCaseSensitivity(Qt::CaseInsensitive);
+	completer->setFilterMode(Qt::MatchContains);
+	completer->setCompletionMode(QCompleter::InlineCompletion);
+	combobox->setCompleter(completer);
+}
+
+void PopEditorDialog::setupConnections()
+{
 	connect(backButton, &QPushButton::pressed, this, [this]()
 	{
-		if (hasChanges)
-			emit popChanged(m_popData);
+		saveChanges();
 		emit backButtonPressed();
 	});
 
@@ -181,7 +192,7 @@ PopEditorDialog::PopEditorDialog(QWidget *parent)
 			if (size > 0)
 			{
 				bool isOldSizeBigger = m_popData.size > size;
-				float difference = float(size) / m_popData.size;
+				double difference = double(size) / m_popData.size;
 				m_popData.money *= difference;
 
 				m_popData.size = size;
@@ -207,106 +218,95 @@ PopEditorDialog::PopEditorDialog(QWidget *parent)
 		m_popData.religion = text;
 		hasChanges = true;
 	});
+}
 
-	connect(m_militancyEdit, &QLineEdit::textChanged, this, [this]()
-	{
-		if (m_militancyEdit->text().trimmed().isEmpty())
+void PopEditorDialog::setupStyle()
+{
+	backButton->setObjectName("control_button");
+	deletePopButton->setObjectName("control_button");
+
+	// border - image: url(.. / images / test_combobox.png) 9 13 9 10 stretch;
+
+
+	setStyleSheet(R"(
+		#background
 		{
-			m_militancyEdit->setText("0");
-
-			m_popData.militancy = 0.1f;
+			border-image: url(../images/dialog.png) 2 2 2 2 stretch stretch;
+			border-width: 0px;
 		}
-		else
+		
+		QPushButton 
 		{
-			float militancy = m_militancyEdit->text().toFloat();
-			m_popData.militancy = militancy;
-			hasChanges = true;
+		    font-weight: bold;
+		    color: #FFF0C2;                     
+		    font-size: 14px;
 		}
-	});
 
-	connect(m_literacyEdit, &QLineEdit::textChanged, this, [this]()
-	{
-		if (m_literacyEdit->text().trimmed().isEmpty())
+		QPushButton:hover
 		{
-			m_literacyEdit->setText("0");
-
-			m_popData.literacy = 0.1f;
+			color: #FFFFFF;
+		
 		}
-		else
+
+		#control_button
 		{
-			float literacy = m_literacyEdit->text().toFloat();
-			m_popData.literacy = literacy;
-			hasChanges = true;
+			font-size: 16px;
+			font-weight: bold;
+			background: transparent;
+			border: none;
+			
 		}
-	});
-
-	connect(m_consciousnessEdit, &QLineEdit::textChanged, this, [this]()
-	{
-		if (m_consciousnessEdit->text().trimmed().isEmpty())
+		
+		#control_button:hover
 		{
-			m_consciousnessEdit->setText("0");
-
-			m_popData.consciousness = 0.1f;
+			color: #FFFFFF;
 		}
-		else
+		
+
+		QWidget
 		{
-			float consciousness = m_consciousnessEdit->text().toFloat();
-			m_popData.consciousness = consciousness;
-			hasChanges = true;
-		}		
-	});
+			font-family: Georgia;
+			color: #f5cc93;
+		}
+
+		QComboBox
+		{
+		    border-width: 10px;
+		    font-size: 14px;
+		    padding: 2px 2px 2px 2px;
+		    background: transparent;
+			border: none;
+			border-bottom: 2px solid #e6a535;
+		}
+
+		QLineEdit
+		{
+			border-width: 10px;
+			font-size: 14px;
+			padding: 2px 2px 2px 2px;
+			background: transparent;
+			border: none;
+			border-bottom: 2px solid #e6a535;
+		}
+		
+		QComboBox QAbstractItemView
+		{
+			background: #2b1d16;
+			border-image: url(../images/combobox_list.png) 10 13 10 10 stretch;
+			border-width: 10px;
+			selection-background-color: #4e3427;
+			selection-color: #ffffff;            
+			outline: none;             
+			border-style: solid;
+			padding: 0px;
+			margin: -5px;
+		}
+		
+		QComboBox QAbstractItemView::item
+		{
+			min-height: 25px;
+			padding-left: 10px;
+		}
+		)");
 }
 
-PopEditorDialog::~PopEditorDialog()
-{}
-
-void PopEditorDialog::setPopData(const PopData & pop)
-{
-	m_popData = pop;
-
-	m_sizeEdit->setText(QString::number(pop.size));
-	m_typeComboBox->setCurrentText(pop.type);
-	m_cultureComboBox->setCurrentText(pop.culture);
-	m_religionComboBox->setCurrentText(pop.religion);
-	m_militancyEdit->setText(QString::number(pop.militancy));
-	m_literacyEdit->setText(QString::number(pop.literacy));
-	m_consciousnessEdit->setText(QString::number(pop.consciousness));
-
-	m_ideologyWidget->updateIdeologies(pop.ideologies);
-}
-
-void PopEditorDialog::setCultures(const QList<QString>& cultures)
-{
-	m_cultureComboBox->addItems(cultures);
-	m_cultureComboBox->completer()->setModel(m_cultureComboBox->model());
-}
-
-void PopEditorDialog::setTypes(const QList<QString>& types)
-{
-	m_typeComboBox->addItems(types);
-	m_typeComboBox->completer()->setModel(m_typeComboBox->model());
-}
-
-void PopEditorDialog::setReligions(const QList<QString>& religions)
-{
-	m_religionComboBox->addItems(religions);
-	m_religionComboBox->completer()->setModel(m_religionComboBox->model());
-}
-
-void PopEditorDialog::setIdeologies(const QList<Ideology>& ideologies)
-{
-	m_ideologyWidget->createIdeologyWigdets(ideologies);
-}
-
-void PopEditorDialog::setupComboBox(QComboBox* combobox)
-{
-	combobox->setEditable(true);
-	combobox->setMaxVisibleItems(15);
-	combobox->setInsertPolicy(QComboBox::NoInsert);
-
-	auto* completer = new QCompleter(combobox->model(), combobox);
-	completer->setCaseSensitivity(Qt::CaseInsensitive);
-	completer->setFilterMode(Qt::MatchContains);
-	completer->setCompletionMode(QCompleter::InlineCompletion);
-	combobox->setCompleter(completer);
-}

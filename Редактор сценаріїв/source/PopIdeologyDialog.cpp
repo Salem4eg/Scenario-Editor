@@ -7,8 +7,14 @@ PopIdeologyDialog::PopIdeologyDialog(QWidget *parent)
 	setWindowFlag(Qt::Window);
 
 	auto* mainLayout = new QVBoxLayout(this);
+	mainLayout->setContentsMargins(0, 0, 0, 0);
+
+	auto* centralWidget = new QWidget;
+	auto* centralLayout = new QVBoxLayout(centralWidget);
+	centralWidget->setObjectName("background");
 
 	auto* widgetLabel = new QLabel("Ideologies");
+	widgetLabel->setObjectName("title");
 
 	auto* ideologiesWidget = new QWidget;
 	auto* containerLayout = new QHBoxLayout(ideologiesWidget);
@@ -23,15 +29,16 @@ PopIdeologyDialog::PopIdeologyDialog(QWidget *parent)
 	containerLayout->addWidget(rightIdeologiesWidget);
 
 	auto* bottomWidget = new QWidget;
-	auto* bottomLayout = new QHBoxLayout(bottomWidget);
+	auto* bottomLayout = new QVBoxLayout(bottomWidget);
 
 	totalPercentageWidget = new QLabel("Total percentage 100%");
 
 	auto* backButton = new QPushButton("Back");
+	backButton->setObjectName("control_button");
 
 	bottomLayout->addStretch(1);
-	bottomLayout->addWidget(backButton, 1);
 	bottomLayout->addWidget(totalPercentageWidget, 1);
+	bottomLayout->addWidget(backButton, 1);
 
 	connect(backButton, &QPushButton::pressed, [this]()
 	{
@@ -41,9 +48,13 @@ PopIdeologyDialog::PopIdeologyDialog(QWidget *parent)
 		emit backButtonPressed();
 	});
 
-	mainLayout->addWidget(widgetLabel, 0, Qt::AlignHCenter);
-	mainLayout->addWidget(ideologiesWidget, 1);
-	mainLayout->addWidget(bottomWidget, 0, Qt::AlignHCenter);
+	centralLayout->addWidget(widgetLabel, 0, Qt::AlignHCenter);
+	centralLayout->addWidget(ideologiesWidget, 1);
+	centralLayout->addWidget(bottomWidget, 0, Qt::AlignHCenter);
+
+	mainLayout->addWidget(centralWidget);
+
+	setupStyle();
 }
 
 PopIdeologyDialog::~PopIdeologyDialog()
@@ -64,6 +75,8 @@ void PopIdeologyDialog::updateIdeologies(const QList<Ideology>& ideologies)
 		m_ideologies[ideology.id].percentage = ideology.percentage;
 		m_ideologiesLineEdits[ideology.id]->setText(QString::number(ideology.percentage));
 	}
+
+	checkTotalPercentage();
 }
 
 void PopIdeologyDialog::createIdeologyWigdets(const QList<Ideology>&ideologies)
@@ -77,9 +90,12 @@ void PopIdeologyDialog::createIdeologyWigdets(const QList<Ideology>&ideologies)
 		auto* ideologyLayout = new QHBoxLayout(ideologyWidget);
 
 		auto* ideologyLabel = new QLabel(ideology.name);
-		auto* ideologyEdit = new QLineEdit(QString::number(ideology.percentage));
-		
-		QDoubleValidator* validator = new QDoubleValidator(0.0, 100.0, 2, ideologyEdit);
+		auto* ideologyEdit = new QLineEdit(QLocale::c().toString(ideology.percentage, 'g', 5));
+		ideologyEdit->setAlignment(Qt::AlignHCenter);
+		ideologyEdit->setMaximumWidth(80);
+
+		QDoubleValidator* validator = new QDoubleValidator(0.0, 100.0, 5, ideologyEdit);
+		validator->setLocale(QLocale::c());
 
 		ideologyEdit->setValidator(validator);
 
@@ -94,16 +110,23 @@ void PopIdeologyDialog::createIdeologyWigdets(const QList<Ideology>&ideologies)
 			leftPartSize--;
 		}
 
+		if (ideology.id == 9)
+			bool debug = true;
+
 		m_ideologies[ideology.id] = ideology;
 		m_ideologiesLineEdits[ideology.id] = ideologyEdit;
 
 		connect(ideologyEdit, &QLineEdit::textChanged, [this, ideologyEdit, ideology]()
 		{
-			float percentage = ideologyEdit->text().toFloat();
-			if (percentage == m_ideologies[ideology.id].percentage)
+			double newPercentage = ideologyEdit->text().toDouble();
+			double oldPercentage = m_ideologies[ideology.id].percentage;
+
+			bool isEqual = std::abs(newPercentage - oldPercentage) < 0.00001;
+
+			if (isEqual)
 				return;
 
-			m_ideologies[ideology.id].percentage = percentage;
+			m_ideologies[ideology.id].percentage = newPercentage;
 			
 			checkTotalPercentage();
 		});
@@ -131,20 +154,57 @@ void PopIdeologyDialog::clearLayout(QLayout * layout)
 
 void PopIdeologyDialog::checkTotalPercentage()
 {
-	float totalPercentage = 0;
-
-	for (const auto& ideology : m_ideologies)
-		totalPercentage += ideology.percentage;
-
-	if (totalPercentage > 100.f)
+	double totalPercentage = std::accumulate(m_ideologies.begin(), m_ideologies.end(), 0.0, [](double sum, const Ideology& ideology)
 	{
-		totalPercentageWidget->setText(QString("Total percentage exceeds 100% (%1%)").arg(totalPercentage));
-		// Not saving wrong data
-		m_has_changes = false;
+		return sum + ideology.percentage;
+	});
+
+
+	bool isEqual = std::abs(totalPercentage - 100.0) < 0.00001;
+
+	if (isEqual)
+	{
+		totalPercentageWidget->setText(QString("Total percentage (%1%)").arg(100));
+		m_has_changes = true;
 	}
 	else
 	{
-		totalPercentageWidget->setText(QString("Total percentage (%1%)").arg(totalPercentage));
-		m_has_changes = true;
+		// Not saving wrong data
+		QString formatedPercentage = QLocale::c().toString(totalPercentage, 'f', 5);
+		totalPercentageWidget->setText(QString("Total percentage (%1%)").arg(formatedPercentage));
+		m_has_changes = false;
 	}
+}
+
+void PopIdeologyDialog::setupStyle()
+{
+	setStyleSheet(R"(
+		
+		#background
+		{
+			border-image: url(../images/dialog.png) 2 2 2 2 stretch stretch;
+			border-width: 0px;
+		
+		}
+		
+		#control_button
+		{
+			font-size: 16px;
+			font-weight: bold;
+			background: transparent;
+			border: none;
+			
+		}
+
+
+		#title
+		{
+			font-size: 16px;
+			font-weight: bold;
+			background: transparent;
+			border: none;
+			
+		}
+		
+	)");
 }

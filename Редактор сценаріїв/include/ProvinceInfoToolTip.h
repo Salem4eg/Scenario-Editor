@@ -5,14 +5,14 @@
 #include <QPushButton>
 #include <QGraphicsEffect>
 #include "Structures.h"
-#include "ProvinceBasePopulationDialog.h"
+#include "ProvincePopulationDialog.h"
 
 class ProvinceInfoToolTip : public QWidget
 {
 	Q_OBJECT
 
 public:
-	ProvinceInfoToolTip(QWidget *parent = nullptr);
+	ProvinceInfoToolTip(bool isSaveData, QWidget *parent = nullptr);
 	~ProvinceInfoToolTip();
 
 public slots:
@@ -39,6 +39,6 @@ private:
 	QLabel* m_owner;
 	QLabel* m_cores;
 	Province m_provinceInfo;
-	ProvinceBasePopulationDialog* m_populationDialog;
+	ProvincePopulationDialog* m_populationDialog;
 };
 

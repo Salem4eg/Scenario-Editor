@@ -440,13 +440,13 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 				else if (varName == "size")
 					pop.size = value.toInt();
 				else if (varName == "money")
-					pop.money = value.toFloat();
+					pop.money = value.toDouble();
 				else if (varName == "con")
-					pop.consciousness = value.toFloat();
+					pop.consciousness = value.toDouble();
 				else if (varName == "mil")
-					pop.militancy = value.toFloat();
+					pop.militancy = value.toDouble();
 				else if (varName == "literacy")
-					pop.literacy = value.toFloat();
+					pop.literacy = value.toDouble();
 
 				lastReadPosition = scanner->currentOffset();
 			}
@@ -468,7 +468,7 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 						if (scanner->nextToken(value) == TokenType::Equals &&
 							scanner->nextToken(value) == TokenType::Identifier)
 						{
-							ideologies.push_back(Ideology { .id = id, .percentage = value.toFloat() });
+							ideologies.push_back(Ideology { .id = id, .percentage = value.toDouble() });
 						}
 					}
 				}
@@ -482,7 +482,7 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 				if (scanner->nextToken(value) != TokenType::OpenBrace)
 					continue;
 
-				QList<QPair<int, float>> issues;
+				QList<QPair<int, double>> issues;
 				while ((token = scanner->nextToken(value)) != TokenType::EndOfFile)
 				{
 					if (token == TokenType::CloseBrace)
@@ -493,14 +493,14 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 						if (scanner->nextToken(value) == TokenType::Equals &&
 							scanner->nextToken(value) == TokenType::Identifier)
 						{
-							issues.push_back(QPair<int, float> { id, value.toFloat() });
+							issues.push_back(QPair<int, double> { id, value.toDouble() });
 						}
 					}
 				}
 				pop.issues = issues;
 				lastReadPosition = scanner->currentOffset();
 			}
-			else if (pop.culture.isEmpty())
+			else if (pop.culture == "no_culture")
 			{
 				qint64 startTokenPos = scanner->currentOffset() - varName.length();
 
@@ -598,16 +598,26 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 		{
 			stream << "\n\tcore=\"" << core.toUtf8() << "\"";
 		}
+		stream << "\n";
 	}
+
+	int depth = 1; // Depth counter to track nested blocks
 
 	for (const QString& line : province.rawLinesBeforePops)
 	{
-		stream << line << "\n";
+		depth += line.count('{') - line.count('}');
+
+		// Setting appropriate depth by tabulation
+		for (int i = 0; i < depth; ++i)
+		{
+			stream << "\t";
+		}
+		stream << line.trimmed() << "\n";
 	}
 
 	for (const PopData& pop : province.population)
 	{
-		stream << "\n\t" << pop.type.toUtf8() << "= \n\t{\n";
+		stream << "\t" << pop.type.toUtf8() << "= \n\t{\n";
 		stream << "\t\tid=" << pop.id << "\n";
 		stream << "\t\tsize=" << pop.size << "\n";
 		stream << "\t\t" << pop.culture.toUtf8() << "=" << pop.religion.toUtf8() << "\n";
@@ -615,20 +625,20 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 
 		if (!pop.ideologies.isEmpty())
 		{
-			stream << "\t\tideology=\n\t{\n";
+			stream << "\t\tideology=\n\t\t{\n";
 			for (const Ideology& ideology : pop.ideologies)
 			{
-				stream << QString("%1=%2").arg(ideology.id).arg(ideology.percentage);
+				stream << QString("%1=%2\n").arg(ideology.id).arg(ideology.percentage);
 			}
 			stream << "\t\t}\n";
 		}
 
 		if (!pop.issues.isEmpty())
 		{
-			stream << "\t\tissues=\n\t{\n";
-			for (const QPair<int, float>& issue : pop.issues)
+			stream << "\t\tissues=\n\t\t{\n";
+			for (const QPair<int, double>& issue : pop.issues)
 			{
-				stream << QString("%1=%2").arg(issue.first).arg(issue.second);
+				stream << QString("%1=%2\n").arg(issue.first).arg(issue.second);
 			}
 			stream << "\t\t}\n";
 		}
@@ -641,7 +651,7 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 
 		for (const QString& line : pop.rawLines)
 		{
-			stream << line;
+			stream << "\t\t" << line << "\n";
 		}
 		stream << "\t}\n";
 	}

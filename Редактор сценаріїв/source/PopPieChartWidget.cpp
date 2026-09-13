@@ -12,7 +12,7 @@ PopPieChartWidget::PopPieChartWidget(QWidget *parent)
 	topLayout->setContentsMargins(0, 0, 0, 0);
 	m_title = new QLabel("Types");
 	
-	topLayout->addSpacing(30);
+	topLayout->addSpacing(20);
 	topLayout->addWidget(m_title, 0, Qt::AlignVCenter | Qt::AlignBottom);
 
 	auto* centralWidget = new QWidget;
@@ -34,6 +34,8 @@ PopPieChartWidget::PopPieChartWidget(QWidget *parent)
 	m_chartView = new QChartView(m_chart);
 	m_chartView->setRenderHint(QPainter::Antialiasing);
 	m_chartView->setFixedSize(100, 100);
+	m_chartView->setAttribute(Qt::WA_TranslucentBackground);
+	m_chartView->setStyleSheet("background: transparent");
 
 	// ### RIGHT PART OF CENTRAL WIDGET - DIAGRAM'S LEGEND
 	auto* legendWidget = new QWidget;
@@ -46,6 +48,8 @@ PopPieChartWidget::PopPieChartWidget(QWidget *parent)
 
 	layout->addWidget(topWidget, 0);
 	layout->addWidget(centralWidget, 0);
+
+	m_title->setStyleSheet("font-size: 16px; font-weight: bold");
 }
 
 PopPieChartWidget::~PopPieChartWidget()
@@ -82,6 +86,7 @@ void PopPieChartWidget::setPopData(QList<ChartData> pops, QString title)
 		{
 			QString label = QString("%1 (%2%)").arg(pop.type).arg(percentage, 0, 'f', 1);
 			QPieSlice* slice = m_series->append(label, pop.size);
+			slice->setPen(Qt::NoPen);
 			slice->setColor(pop.color);
 			addLegendPart(label, pop.color);
 		}
@@ -100,6 +105,7 @@ void PopPieChartWidget::setPopData(QList<ChartData> pops, QString title)
 		if (percentage < 3.0)
 			slice->setLabelVisible(false);
 		slice->setColor(QColor(Qt::gray));
+		slice->setPen(Qt::NoPen);
 		addLegendPart(label, Qt::gray);
 	}
 }

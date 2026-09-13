@@ -33,7 +33,7 @@ struct Ideology
 {
 	int id = -1;
 	QString name = "";
-	float percentage = 0.0f;
+	double percentage = 0.0;
 };
 
 // Data describing population group in a province.
@@ -45,12 +45,12 @@ struct PopData
 	QString type = "no_type";
 	QString culture = "no_culture";
 	QString religion = "no_religion";
-	float militancy = 0;
-	float literacy = 0;
-	float consciousness = 0;
-	float money = 100;
+	double militancy = 0;
+	double literacy = 0;
+	double consciousness = 0;
+	double money = 100;
 	QList<Ideology> ideologies;
-	QList<QPair<int, float>> issues; // issue_id, percentage
+	QList<QPair<int, double>> issues; // issue_id, percentage
 
 	QStringList rawLines;
 };

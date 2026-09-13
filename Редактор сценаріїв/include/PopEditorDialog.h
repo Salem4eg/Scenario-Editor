@@ -8,9 +8,10 @@
 #include <limits>
 #include <QComboBox>
 #include <QCompleter>
+#include <QFrame>
+#include <QCloseEvent>
 #include "Structures.h"
 #include "PopIdeologyDialog.h"
-
 
 class PopEditorDialog : public QWidget
 {
@@ -20,7 +21,7 @@ public:
 	PopEditorDialog(QWidget *parent = nullptr);
 	~PopEditorDialog();
 
-	void setPopData(const PopData& pop);
+	virtual void setPopData(const PopData& pop);
 
 	// One time usage, for initializing all available cultures
 	void setCultures(const QList<QString>& cultures);
@@ -29,27 +30,31 @@ public:
 	// One time usage, for initializing all available religions
 	void setReligions(const QList<QString>& religions);
 	// One time usage, for initializing all available ideologies
-	void setIdeologies(const QList<Ideology>& ideologies);
+	virtual void setIdeologies(const QList<Ideology>& ideologies);
 signals:
 	void deletePop(int id);
 	void backButtonPressed();
 	void popChanged(PopData pop);
-private:
+protected slots:
+	void closeEvent(QCloseEvent* event) override;
+	void saveChanges();
+	virtual void setupStyle();
+	void setupComboBox(QComboBox* combobox);
+	void setupConnections();
+
+protected:
 	QComboBox* m_typeComboBox;
 	QComboBox* m_cultureComboBox;
 	QComboBox* m_religionComboBox;
+	QLineEdit* m_sizeEdit;	
 
-	QLineEdit* m_sizeEdit;
-	QLineEdit* m_militancyEdit;
-	QLineEdit* m_literacyEdit;
-	QLineEdit* m_consciousnessEdit;
-	QPushButton* m_edit_ideologies;
+	QPushButton* backButton;
+	QPushButton* deletePopButton;
 
 	bool hasChanges;
 	PopData m_popData;
 
-	PopIdeologyDialog* m_ideologyWidget;
+	QHBoxLayout* topLayout;
 
-	void setupComboBox(QComboBox* combobox);
 };
 

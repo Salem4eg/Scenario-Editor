@@ -29,8 +29,7 @@ set(HEADERS
 	include/SidePanel.h
 	include/Structures.h
 	include/PopEditorDialog.h
-	include/ProvinceBasePopulationDialog.h
-	include/ProvinceSavePopulationDialog.h
+	include/PopSaveEditorDialog.h
 	include/ProvincePopulationDialog.h
 	include/PopPieChartWidget.h
 	include/PopIdeologyDialog.h
@@ -53,8 +52,7 @@ set(SOURCES
 	source/ScenarioSetupWidget.cpp
 	source/SidePanel.cpp
 	source/PopEditorDialog.cpp
-	source/ProvinceBasePopulationDialog.cpp
-	source/ProvinceSavePopulationDialog.cpp
+	source/PopSaveEditorDialog.cpp
 	source/ProvincePopulationDialog.cpp
 	source/PopPieChartWidget.cpp
 	source/PopIdeologyDialog.cpp

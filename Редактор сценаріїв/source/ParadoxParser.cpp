@@ -38,9 +38,6 @@ void ParadoxParser::loadProvincesDefinition(ParadoxGameData& game_data)
 
 		auto rgb = qRgb(red, green, blue);
 
-		if (provinceID == 1825)
-			qDebug() << "1825: " << rgb << " colors: " << red << " " << green << " " << blue;
-
 		game_data.color_to_province.insert(rgb, provinceID);
 	}
 }

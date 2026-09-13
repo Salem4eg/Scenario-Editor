@@ -3,7 +3,7 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 
-ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
+ProvinceInfoToolTip::ProvinceInfoToolTip(bool isSaveData, QWidget *parent)
 	: QWidget(parent)
 {
 	QVBoxLayout* main_layout = new QVBoxLayout(this);
@@ -40,17 +40,19 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 	auto* bottom_layout = new QHBoxLayout(bottom_widget);
 
 	auto* close_button = new QPushButton("Close");
-	close_button->setFixedSize(80, 30);
+
 	auto* edit_population_button = new QPushButton("Edit Population");
-	edit_population_button->setFixedSize(120, 30);
+
+	bottom_layout->addSpacing(10);
 	bottom_layout->addWidget(close_button, 0, Qt::AlignHCenter);
 	bottom_layout->addWidget(edit_population_button, 0, Qt::AlignHCenter);
+	bottom_layout->addSpacing(10);
 
 	layout->addWidget(top_widget);
 	layout->addWidget(middle_widget);
 	layout->addWidget(bottom_widget);
 
-	m_populationDialog = new ProvincePopulationDialog(this);
+	m_populationDialog = new ProvincePopulationDialog(isSaveData);
 
 	connect(close_button, &QPushButton::clicked, this, [this]()
 	{
@@ -60,6 +62,7 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 	connect(edit_population_button, &QPushButton::pressed, this, [this]()
 	{
 		m_populationDialog->setPopData(m_provinceInfo.population);
+		m_populationDialog->setProvinceName(m_provinceInfo.name);
 		m_populationDialog->exec();
 	});
 
@@ -87,14 +90,18 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 
 		QPushButton
 		{
-			border-image: url(../images/small_button.png) 2 2 2 2 stretch;
+			border-width: 10px;
+		    font-size: 16px;
 			font-weight: bold;
-			font-size: 18px;
+		    padding: 2px 2px 2px 2px;
+		    background: transparent;
+			border: none;
+			border-bottom: 2px solid #e6a535;
 		}
 
 		QPushButton:hover
 		{
-			border-image: url(../images/small_button_hovered.png) 2 2 2 2 stretch;
+			color: white;
 		}
 
 		#tooltip
@@ -115,7 +122,9 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(QWidget *parent)
 }
 
 ProvinceInfoToolTip::~ProvinceInfoToolTip()
-{}
+{
+	m_populationDialog->deleteLater();
+}
 
 Province ProvinceInfoToolTip::getInfo() const
 {

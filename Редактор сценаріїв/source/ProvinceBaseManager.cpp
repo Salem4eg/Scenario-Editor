@@ -76,6 +76,7 @@ Province ProvinceBaseManager::getProvinceInfo(int province)
 			depth--;
 	}
 
+	info.id = province;
 	info.name = getProvinceName(province);
 
 	info.population = m_provinces[province].population;
@@ -135,7 +136,9 @@ int ProvinceBaseManager::getProvinceFromFilepath(QString filepath)
 {
 	QString filename = filepath.split('/').last();
 
-	int province = filename.split('-').first().trimmed().toInt();
+	QStringList items = filename.split(" ");
+
+	int province = items.first().toInt();
 
 	return province;
 }
@@ -319,7 +322,11 @@ QString ProvinceBaseManager::getProvinceName(int province)
 
 	QFileInfo info(filepath);
 
-	return info.baseName().split("-").last().trimmed();
+	QStringList items = info.baseName().split(" ");
+
+	QString provinceName = items.mid(1).join(" ").remove("-").trimmed();
+
+	return provinceName;
 }
 
 void ProvinceBaseManager::parseProvinceFile(const QString& filepath, ParadoxGameData& game_data)
@@ -343,7 +350,7 @@ int ProvinceBaseManager::getProvinceIDFromFilepath(const QString& filepath)
 	auto words = filepath.split("/");
 	QString document = words.last();
 
-	auto items = document.split("-");
+	auto items = document.split(" ");
 
 	int provinceID = items.first().toInt();
 
@@ -403,7 +410,7 @@ void ProvinceBaseManager::parsePopFiles(QString& country_filepath)
 	TokenType token;
 	int depth = 0;
 	QString value;
-
+	
 	while ((token = scanner.nextToken(value)) != TokenType::EndOfFile)
 	{
 		if (token == TokenType::Identifier && depth == 0)

@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QBoxLayout>
 #include <QValidator>
+#include <numeric>
 #include "Structures.h"
 
 class PopIdeologyDialog : public QWidget
@@ -23,6 +24,12 @@ signals:
 	void ideologiesChanged(QList<Ideology> ideologies);
 	void backButtonPressed();
 
+
+private slots:
+	void clearLayout(QLayout* layout);
+	void checkTotalPercentage();
+	void setupStyle();
+
 private:
 	QVBoxLayout* leftIdeologiesContainer;
 	QVBoxLayout* rightIdeologiesContainer;
@@ -32,7 +39,5 @@ private:
 	QHash<int, QLineEdit*> m_ideologiesLineEdits;
 	bool m_has_changes = false;
 
-	void clearLayout(QLayout* layout);
-	void checkTotalPercentage();
 };
 

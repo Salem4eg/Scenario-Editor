@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QWidget>
-#include <QPixMap>
+#include <QPixmap>
 
 
 class ProgressBar : public QWidget

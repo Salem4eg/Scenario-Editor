@@ -615,6 +615,12 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 		stream << line.trimmed() << "\n";
 	}
 
+	// sort by cultures alphabetically
+	std::sort(province.population.begin(), province.population.end(), [](const PopData& a, const PopData& b) 
+	{
+		return a.culture < b.culture;
+	});
+
 	for (const PopData& pop : province.population)
 	{
 		stream << "\t" << pop.type.toUtf8() << "= \n\t{\n";

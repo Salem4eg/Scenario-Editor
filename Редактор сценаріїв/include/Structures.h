@@ -85,3 +85,8 @@ enum class TokenType
 	EndOfFile
 };
 
+struct CountryData
+{
+	QString tag;
+	QList<QList<int>> states;
+};

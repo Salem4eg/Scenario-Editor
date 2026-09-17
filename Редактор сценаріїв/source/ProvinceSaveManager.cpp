@@ -8,6 +8,7 @@ ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directo
 	QString provinces_path(dir.filePath("history/provinces"));
 	m_provinces_directory = provinces_path;
 	m_default_map = dir.filePath("map/default.map");
+	m_region_file_path = dir.filePath("map/region.txt");
 }
 
 ProvinceSaveManager::~ProvinceSaveManager()
@@ -48,6 +49,8 @@ Province ProvinceSaveManager::getProvinceInfo(int provinceID)
 void ProvinceSaveManager::loadProvinces(ParadoxGameData& game_data)
 {
 	loadChosableProvinces(game_data);
+
+	parseRegionFile();
 
 	loadSaveFile();
 
@@ -90,8 +93,8 @@ void ProvinceSaveManager::loadSaveFile()
 		return;
 	}
 
-	parseProvincesBlock(&scanner, firstProvinceId);
-
+	QString country_tag = parseProvincesBlock(&scanner, firstProvinceId);
+	parseCountryBlock(&scanner, country_tag);
 
 	file.unmap(memoryData);
 }
@@ -251,7 +254,7 @@ int ProvinceSaveManager::parseHeader(FileStreamScanner* scanner)
 	return firstProvinceId;
 }
 
-void ProvinceSaveManager::parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId)
+QString ProvinceSaveManager::parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId)
 {
 	int currentProvinceId = firstProvinceId;
 	TokenType token;
@@ -305,7 +308,7 @@ void ProvinceSaveManager::parseProvincesBlock(FileStreamScanner* scanner, int fi
 			// Check if it is the end of the provinces block (next country TAG)
 			if (!isInt || !isBlockStart)
 			{
-				break;
+				return value; // Return the country tag of the next block
 			}
 		}
 	}
@@ -669,3 +672,168 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 
 	return buffer;
 }
+
+void ProvinceSaveManager::parseRegionFile()
+{
+	QFile file(m_region_file_path);
+
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		qWarning() << "Failed to open region file for reading:" << m_region_file_path;
+		return;
+	}
+
+	uchar* mappedData = reinterpret_cast<uchar*>(file.map(0, file.size()));
+
+	FileStreamScanner scanner(mappedData, file.size());
+	int depth = 0;
+	TokenType token;
+	QString value;
+
+	QList<int> regionProvinces;
+
+	while ((token = scanner.nextToken(value)) != TokenType::EndOfFile)
+	{
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+
+			if (depth == 0 && !regionProvinces.isEmpty())
+			{
+				m_regions.insert(m_regions.size(), regionProvinces);
+
+				regionProvinces.clear();
+			}
+		}
+		else if (depth == 1 && token == TokenType::Identifier)
+		{
+			bool isInt = false;
+			int provinceID = value.toInt(&isInt);
+			if (isInt)
+			{
+				regionProvinces.push_back(provinceID);
+			}
+		}
+	}
+}
+
+void ProvinceSaveManager::parseCountryBlock(FileStreamScanner *scanner, const QString &countryTag)
+{
+	int depth = 1;
+	TokenType token;
+	QString value;
+
+	parseCountry(scanner, countryTag);
+
+	while((token = scanner->nextToken(value)) != TokenType::EndOfFile)
+	{
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+		}
+		else if (depth == 1 && token == TokenType::Identifier)
+		{
+			QString nextCountryTag = value;
+			if (scanner->nextToken(value) == TokenType::Equals && 
+				scanner->nextToken(value) == TokenType::OpenBrace)
+			{
+				parseCountry(scanner, nextCountryTag);
+			}
+			else if (nextCountryTag == "rebel_faction")
+				return;
+		}
+	}
+}
+
+void ProvinceSaveManager::parseCountry(FileStreamScanner *scanner, const QString &countryTag)
+{
+	int depth = 1;
+	TokenType token;
+	QString value;
+
+	CountryData countryData;
+	countryData.tag = countryTag;
+
+	while (depth > 1 && (token = scanner->nextToken(value)) != TokenType::EndOfFile)
+	{
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+		}
+		else if (depth == 1 && token == TokenType::Identifier)
+		{
+			if (value != "state")
+				continue;
+			
+			// skip = {
+			if (scanner->nextToken(value) != TokenType::Equals)
+				continue;
+			if (scanner->nextToken(value) != TokenType::OpenBrace)
+				continue;
+			
+			auto stateProvinces = parseStateBlock(scanner);
+			
+			if (!stateProvinces.isEmpty())
+				countryData.states.push_back(stateProvinces);
+		}
+	}
+}
+
+QList<int> ProvinceSaveManager::parseStateBlock(FileStreamScanner *scanner)
+{
+	QList<int> stateProvinces;
+	int depth = 2;
+	TokenType token;
+	QString value;
+
+	while (depth > 1 && (token = scanner->nextToken(value)) != TokenType::EndOfFile)
+	{
+		if (token == TokenType::OpenBrace)
+		{
+			depth++;
+		}
+		else if (token == TokenType::CloseBrace)
+		{
+			depth--;
+		}
+		else if (depth == 2 && token == TokenType::Identifier)
+		{
+			if (value != "provinces")
+				continue;
+			
+			// skip = {
+			if (scanner->nextToken(value) != TokenType::Equals)
+				continue;
+			if (scanner->nextToken(value) != TokenType::OpenBrace)
+				continue;
+
+			while (token != TokenType::CloseBrace)
+			{
+				if (token == TokenType::Identifier)
+				{
+					bool isInt = false;
+					int provinceID = value.toInt(&isInt);
+					if (isInt)
+					{
+						stateProvinces.push_back(provinceID);
+					}
+				}
+			}
+		}
+	}
+    return stateProvinces;
+}
+
+

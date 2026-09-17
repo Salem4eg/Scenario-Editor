@@ -40,8 +40,12 @@ private:
 	QString m_save_path;
 	QString m_provinces_directory;
 	QString m_default_map;
+	QString m_region_file_path;
 
 	QMap<int, Province> m_provinces;
+
+	QMap<int, QList<int>> m_regions;
+	QList<CountryData> m_countries;
 	
 	QStringList m_popTypes;
 
@@ -58,11 +62,15 @@ private:
 	void saveFile();
 	// Reads until province occurs, returns first province line position
 	int parseHeader(FileStreamScanner* scanner);
-	void parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId);
+	QString parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId);
 	void parseProvinceBlock(FileStreamScanner* scanner, Province& province);
 	void parsePopInProvinceBlock(FileStreamScanner* scanner, Province& province, const QString& popType);
 
 	QByteArray serializeProvince(const Province& province);
-	
+
+	void parseRegionFile();
+	void parseCountryBlock(FileStreamScanner* scanner, const QString& countryTag);
+	void parseCountry(FileStreamScanner* scanner, const QString& countryTag);
+	QList<int> parseStateBlock(FileStreamScanner* scanner);
 };
 

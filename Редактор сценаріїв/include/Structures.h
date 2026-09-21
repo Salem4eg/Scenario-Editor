@@ -89,9 +89,10 @@ struct CountryData
 {
 	QString tag;
 	QList<QList<int>> states;
+	bool isModified = false;
 	quint64 startCountryOffset = -1;
+	quint64 endCountryOffset = -1; 
 	 // If there is no states, before and after States offset will remain -1
 	quint64 beforeStatesOffset = -1;
 	quint64 afterStatesOffset = -1;
-	quint64 endCountryOffset = -1; 
 };

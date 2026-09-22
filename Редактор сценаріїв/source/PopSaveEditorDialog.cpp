@@ -80,9 +80,9 @@ void PopSaveEditorDialog::setPopData(const PopData& pop)
 	m_typeComboBox->setCurrentText(pop.type);
 	m_cultureComboBox->setCurrentText(pop.culture);
 	m_religionComboBox->setCurrentText(pop.religion);
-	m_militancyEdit->setText(QString::number(pop.militancy));
-	m_literacyEdit->setText(QString::number(pop.literacy));
-	m_consciousnessEdit->setText(QString::number(pop.consciousness));
+	m_militancyEdit->setText(pop.militancy);
+	m_literacyEdit->setText(pop.literacy);
+	m_consciousnessEdit->setText(pop.consciousness);
 
 	m_ideologyWidget->updateIdeologies(pop.ideologies);
 }
@@ -117,12 +117,12 @@ void PopSaveEditorDialog::setupConnections()
 		{
 			m_militancyEdit->setText("0");
 
-			m_popData.militancy = 0.1f;
+			m_popData.militancy = "0.00000";
 		}
 		else
 		{
 			double militancy = m_militancyEdit->text().toDouble();
-			m_popData.militancy = militancy;
+			m_popData.militancy = QString::number(militancy, 'f', 5);
 			hasChanges = true;
 		}
 	});
@@ -133,12 +133,12 @@ void PopSaveEditorDialog::setupConnections()
 		{
 			m_literacyEdit->setText("0");
 
-			m_popData.literacy = 0.1f;
+			m_popData.literacy = "0.00000";
 		}
 		else
 		{
 			double literacy = m_literacyEdit->text().toDouble();
-			m_popData.literacy = literacy;
+			m_popData.literacy = QString::number(literacy, 'f', 5);
 			hasChanges = true;
 		}
 	});
@@ -149,12 +149,12 @@ void PopSaveEditorDialog::setupConnections()
 		{
 			m_consciousnessEdit->setText("0");
 
-			m_popData.consciousness = 0.1f;
+			m_popData.consciousness = "0.00000";
 		}
 		else
 		{
 			double consciousness = m_consciousnessEdit->text().toDouble();
-			m_popData.consciousness = consciousness;
+			m_popData.consciousness = QString::number(consciousness, 'f', 5);
 			hasChanges = true;
 		}
 	});

@@ -193,7 +193,10 @@ void PopEditorDialog::setupConnections()
 			{
 				bool isOldSizeBigger = m_popData.size > size;
 				double difference = double(size) / m_popData.size;
-				m_popData.money *= difference;
+				double money = m_popData.money.toDouble();
+				money *= difference;
+
+				m_popData.money = QString::number(money, 'f', 5);
 
 				m_popData.size = size;
 				hasChanges = true;

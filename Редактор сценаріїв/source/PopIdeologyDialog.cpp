@@ -73,7 +73,7 @@ void PopIdeologyDialog::updateIdeologies(const QList<Ideology>& ideologies)
 	for (const auto& ideology : ideologies)
 	{
 		m_ideologies[ideology.id].percentage = ideology.percentage;
-		m_ideologiesLineEdits[ideology.id]->setText(QString::number(ideology.percentage));
+		m_ideologiesLineEdits[ideology.id]->setText(ideology.percentage);
 	}
 
 	checkTotalPercentage();
@@ -90,7 +90,7 @@ void PopIdeologyDialog::createIdeologyWigdets(const QList<Ideology>&ideologies)
 		auto* ideologyLayout = new QHBoxLayout(ideologyWidget);
 
 		auto* ideologyLabel = new QLabel(ideology.name);
-		auto* ideologyEdit = new QLineEdit(QLocale::c().toString(ideology.percentage, 'g', 5));
+		auto* ideologyEdit = new QLineEdit(ideology.percentage);
 		ideologyEdit->setAlignment(Qt::AlignHCenter);
 		ideologyEdit->setMaximumWidth(80);
 
@@ -118,12 +118,10 @@ void PopIdeologyDialog::createIdeologyWigdets(const QList<Ideology>&ideologies)
 
 		connect(ideologyEdit, &QLineEdit::textChanged, [this, ideologyEdit, ideology]()
 		{
-			double newPercentage = ideologyEdit->text().toDouble();
-			double oldPercentage = m_ideologies[ideology.id].percentage;
+			QString newPercentage = ideologyEdit->text();
+			QString oldPercentage = m_ideologies[ideology.id].percentage;
 
-			bool isEqual = std::abs(newPercentage - oldPercentage) < 0.00001;
-
-			if (isEqual)
+			if (newPercentage == oldPercentage)
 				return;
 
 			m_ideologies[ideology.id].percentage = newPercentage;
@@ -154,13 +152,17 @@ void PopIdeologyDialog::clearLayout(QLayout * layout)
 
 void PopIdeologyDialog::checkTotalPercentage()
 {
-	double totalPercentage = std::accumulate(m_ideologies.begin(), m_ideologies.end(), 0.0, [](double sum, const Ideology& ideology)
+	int64_t totalPercentage = std::accumulate(m_ideologies.begin(), m_ideologies.end(), 0.0, [](int64_t sum, const Ideology& ideology)
 	{
-		return sum + ideology.percentage;
+		double percentageDouble = ideology.percentage.toDouble();
+		// Convert to integer representation to avoid floating-point precision issues
+		int64_t percentageInt = static_cast<int64_t>(std::round(percentageDouble * 100000));
+
+		return sum + percentageInt;
 	});
 
 
-	bool isEqual = std::abs(totalPercentage - 100.0) < 0.00001;
+	bool isEqual = totalPercentage == 100'00000;
 
 	if (isEqual)
 	{
@@ -169,9 +171,7 @@ void PopIdeologyDialog::checkTotalPercentage()
 	}
 	else
 	{
-		// Not saving wrong data
-		QString formatedPercentage = QLocale::c().toString(totalPercentage, 'f', 5);
-		totalPercentageWidget->setText(QString("Total percentage (%1%)").arg(formatedPercentage));
+		totalPercentageWidget->setText(QString("Total percentage (%1%)").arg(totalPercentage / 100000.0));
 		m_has_changes = false;
 	}
 }

@@ -3,8 +3,8 @@
 #include <QVBoxLayout>
 #include <QAbstractItemView>
 
-SidePanel::SidePanel(QWidget *parent)
-	: QWidget(parent)
+SidePanel::SidePanel(QString game_directory, QWidget *parent)
+	: QWidget(parent), game_directory(game_directory)
 {
     setFixedSize(200, 350);
     setStyleSheet("background: rgba(30,30,30,100);");
@@ -291,8 +291,7 @@ QList<QPair<QString, QString>> SidePanel::readCountriesFile()
 {
     QList<QPair<QString, QString>> countries;
 
-    QString mod_filepath = "E:/Steam/steamapps/common/Victoria 2/mod/TGC";
-    QString countries_filepath = mod_filepath + "/common/countries.txt";
+    QString countries_filepath = game_directory + "/common/countries.txt";
 
     QFile countries_file(countries_filepath);
 

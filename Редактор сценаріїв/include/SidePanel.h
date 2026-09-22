@@ -12,7 +12,7 @@ class SidePanel : public QWidget
 	Q_OBJECT
 
 public:
-	SidePanel(QWidget *parent = nullptr);
+	SidePanel(QString game_directory, QWidget *parent = nullptr);
 	~SidePanel();
 
 signals:
@@ -34,6 +34,8 @@ private:
     QLabel* chosen_country;
 
     QString chosen_tag;
+
+	QString game_directory;
 
     bool enable_province_choosing = false;
 

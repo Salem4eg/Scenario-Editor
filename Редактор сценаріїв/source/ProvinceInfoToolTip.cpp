@@ -96,7 +96,6 @@ ProvinceInfoToolTip::ProvinceInfoToolTip(bool isSaveData, QWidget *parent)
 		    padding: 2px 2px 2px 2px;
 		    background: transparent;
 			border: none;
-			border-bottom: 2px solid #e6a535;
 		}
 
 		QPushButton:hover

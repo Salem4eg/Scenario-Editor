@@ -27,7 +27,7 @@ ScenarioEditorWidget::ScenarioEditorWidget(QString gameDirectory, QString saveFi
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     QVBoxLayout* view_layout = new QVBoxLayout(view);
-    side_panel = new SidePanel;
+    side_panel = new SidePanel(gameDirectory);
 
     view_layout->addWidget(side_panel, 0, Qt::AlignBottom);
     view_layout->setContentsMargins(10, 0, 0, 20);

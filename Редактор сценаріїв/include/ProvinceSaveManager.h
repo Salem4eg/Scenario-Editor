@@ -40,8 +40,13 @@ private:
 	QString m_save_path;
 	QString m_provinces_directory;
 	QString m_default_map;
+	QString m_region_file_path;
 
 	QMap<int, Province> m_provinces;
+
+	QMap<int, QList<int>> m_regions; // region_id -> province_ids
+	QMap<int, int> m_province_to_region; // province_id -> region_id
+	QHash<QString, CountryData> m_countries;
 	
 	QStringList m_popTypes;
 
@@ -58,11 +63,23 @@ private:
 	void saveFile();
 	// Reads until province occurs, returns first province line position
 	int parseHeader(FileStreamScanner* scanner);
-	void parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId);
+	CountryData parseProvincesBlock(FileStreamScanner* scanner, int firstProvinceId);
 	void parseProvinceBlock(FileStreamScanner* scanner, Province& province);
 	void parsePopInProvinceBlock(FileStreamScanner* scanner, Province& province, const QString& popType);
 
 	QByteArray serializeProvince(const Province& province);
 	void saveOriginalFile();
+
+	void parseRegionFile();
+	void parseCountryBlock(FileStreamScanner* scanner, CountryData& countryData);
+	void parseCountry(FileStreamScanner* scanner, CountryData& countryData);
+	QList<int> parseStateBlock(FileStreamScanner* scanner);
+
+	void moveProvinceBetweenRegions(int provinceID, const QString& formerOwner, const QString& newOwner);
+	void removeProvinceFromCountry(int provinceID, const QString& country_tag);
+	void addProvinceToCountry(int provinceID, const QString& country_tag);
+	QByteArray serializeCountry(const CountryData& countryData, char* mappedData);
+	quint64 getRegionStartPosition(char * mappedData, quint64 startOffset, quint64 endOffset);
+	QByteArray serializeRegion(const QList<int>& region, int regionId);
 };
 

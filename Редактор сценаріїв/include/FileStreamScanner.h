@@ -14,8 +14,8 @@ private:
     qint64 m_pos;       
 
 public:
-    FileStreamScanner(const uchar* mappedData, qint64 size)
-        : m_data(reinterpret_cast<const char*>(mappedData)), m_size(size), m_pos(0)
+    FileStreamScanner(const uchar* mappedData, qint64 size, qint64 startOffset = 0)
+        : m_data(reinterpret_cast<const char*>(mappedData)), m_size(size), m_pos(startOffset)
     {}
 
     

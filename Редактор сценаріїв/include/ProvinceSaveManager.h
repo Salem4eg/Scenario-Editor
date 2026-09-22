@@ -63,6 +63,6 @@ private:
 	void parsePopInProvinceBlock(FileStreamScanner* scanner, Province& province, const QString& popType);
 
 	QByteArray serializeProvince(const Province& province);
-	
+	void saveOriginalFile();
 };
 

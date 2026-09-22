@@ -5,7 +5,9 @@
 #include <QList>
 #include <QHash>
 #include <QMap>
+#include <QDir>
 #include <QSaveFile>
+#include <filesystem>
 #include "Structures.h"
 #include "FileReader.h"
 #include "FileStreamScanner.h"
@@ -72,5 +74,6 @@ private:
 	void changePopulationFiles();
 	void changeProvincePopulationData(QString& country_population_filepath, const QList<int>& provinces);
 	QByteArray serializeProvincePopulation(const Province& province);
+	void saveOriginalDirectories();
 };
 

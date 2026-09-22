@@ -9,6 +9,7 @@ ProvinceBaseManager::ProvinceBaseManager(QString game_directory, QObject *parent
 	m_pops_directory = dir.filePath("history/pops/1836.1.1");
 
 	getProvincesFilepath(m_provinces_directory);
+	saveOriginalDirectories();
 }
 
 ProvinceBaseManager::~ProvinceBaseManager()
@@ -590,3 +591,40 @@ QByteArray ProvinceBaseManager::serializeProvincePopulation(const Province& prov
 
 	return population;
 }
+
+void ProvinceBaseManager::saveOriginalDirectories()
+{
+	QDir provinces_dir(m_provinces_directory);
+	QDir pops_dir(m_pops_directory);
+
+	QFileInfo provinces_info(provinces_dir.absolutePath());
+	QFileInfo pops_info(pops_dir.absolutePath());
+
+	QString original_provinces = provinces_info.dir().filePath(provinces_info.fileName() + "_original");
+	QString original_pops = pops_info.dir().filePath(pops_info.fileName() + "_original");
+
+	QDir original_provinces_dir(original_provinces);
+	QDir original_pops_dir(original_pops);
+
+	std::error_code error_code;
+
+	if (!original_provinces_dir.exists())
+	{
+		std::filesystem::copy(m_provinces_directory.toStdWString(), original_provinces.toStdWString(), std::filesystem::copy_options::recursive, error_code);
+
+		if (error_code)
+		{
+			qWarning() << "Failed to copy provinces directory to _original: " << error_code.message().c_str();
+		}
+	}
+
+	if (!original_pops_dir.exists())
+	{
+		std::filesystem::copy(m_pops_directory.toStdWString(), original_pops.toStdWString(), std::filesystem::copy_options::recursive, error_code);
+		if (error_code)
+		{
+			qWarning() << "Failed to copy pops directory to _original: " << error_code.message().c_str();
+		}
+	}
+}
+

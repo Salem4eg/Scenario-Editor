@@ -8,6 +8,8 @@ ProvinceSaveManager::ProvinceSaveManager(QString save_path, QString game_directo
 	QString provinces_path(dir.filePath("history/provinces"));
 	m_provinces_directory = provinces_path;
 	m_default_map = dir.filePath("map/default.map");
+
+	saveOriginalFile();
 }
 
 ProvinceSaveManager::~ProvinceSaveManager()
@@ -440,13 +442,13 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 				else if (varName == "size")
 					pop.size = value.toInt();
 				else if (varName == "money")
-					pop.money = value.toDouble();
+					pop.money = value;
 				else if (varName == "con")
-					pop.consciousness = value.toDouble();
+					pop.consciousness = value;
 				else if (varName == "mil")
-					pop.militancy = value.toDouble();
+					pop.militancy = value;
 				else if (varName == "literacy")
-					pop.literacy = value.toDouble();
+					pop.literacy = value;
 
 				lastReadPosition = scanner->currentOffset();
 			}
@@ -468,7 +470,7 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 						if (scanner->nextToken(value) == TokenType::Equals &&
 							scanner->nextToken(value) == TokenType::Identifier)
 						{
-							ideologies.push_back(Ideology { .id = id, .percentage = value.toDouble() });
+							ideologies.push_back(Ideology { .id = id, .percentage = value });
 						}
 					}
 				}
@@ -482,7 +484,7 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 				if (scanner->nextToken(value) != TokenType::OpenBrace)
 					continue;
 
-				QList<QPair<int, double>> issues;
+				QList<QPair<int, QString>> issues;
 				while ((token = scanner->nextToken(value)) != TokenType::EndOfFile)
 				{
 					if (token == TokenType::CloseBrace)
@@ -493,7 +495,7 @@ void ProvinceSaveManager::parsePopInProvinceBlock(FileStreamScanner* scanner, Pr
 						if (scanner->nextToken(value) == TokenType::Equals &&
 							scanner->nextToken(value) == TokenType::Identifier)
 						{
-							issues.push_back(QPair<int, double> { id, value.toDouble() });
+							issues.push_back(QPair<int, QString> { id, value });
 						}
 					}
 				}
@@ -636,16 +638,18 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 		if (!pop.issues.isEmpty())
 		{
 			stream << "\t\tissues=\n\t\t{\n";
-			for (const QPair<int, double>& issue : pop.issues)
+			for (const QPair<int, QString>& issue : pop.issues)
 			{
 				stream << QString("%1=%2\n").arg(issue.first).arg(issue.second);
 			}
 			stream << "\t\t}\n";
 		}
 
+		if (pop.consciousness != "0")
+			stream << "\t\tcon=" << pop.consciousness << "\n";
+		if (pop.militancy != "0")
+			stream << "\t\tmil=" << pop.militancy << "\n";
 
-		stream << "\t\tcon=" << pop.consciousness << "\n";
-		stream << "\t\tmil=" << pop.militancy << "\n";
 		stream << "\t\tliteracy=" << pop.literacy << "\n";
 
 
@@ -662,4 +666,16 @@ QByteArray ProvinceSaveManager::serializeProvince(const Province& province)
 	}
 
 	return buffer;
+}
+
+void ProvinceSaveManager::saveOriginalFile()
+{
+	QFileInfo saveFileInfo(m_save_path);
+
+	QString originalFilepath = saveFileInfo.baseName() + "_original." + saveFileInfo.completeSuffix();
+
+	QString originalFileFullPath = saveFileInfo.dir().filePath(originalFilepath);
+
+	// Copy will not overwrite if the file already exists
+	QFile::copy(m_save_path, originalFileFullPath);
 }
